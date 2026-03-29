@@ -1,0 +1,14 @@
+#index:
+#    path: /
+#    controller: App\Controller\DefaultController::index
+
+# USERS
+users:
+    path: /users
+    controller: App\Controller\UsersController::Users
+    methods: [POST]
+
+user:
+    path: /users/{id}
+    controller: App\Controller\UsersController::User
+    methods: [DELETE, POST]
