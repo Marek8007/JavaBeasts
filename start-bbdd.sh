@@ -3,7 +3,7 @@
 set -euo pipefail
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
-COMPOSE_DIR="$SCRIPT_DIR/mysql-rds"
+COMPOSE_DIR="$SCRIPT_DIR/JavaBeasts-BBD"
 COMPOSE_FILE="$COMPOSE_DIR/docker-compose.yml"
 
 if ! command -v docker >/dev/null 2>&1 && ! command -v docker-compose >/dev/null 2>&1; then

@@ -2,7 +2,7 @@
 setlocal
 
 set "SCRIPT_DIR=%~dp0"
-set "COMPOSE_DIR=%SCRIPT_DIR%mysql-rds"
+set "COMPOSE_DIR=%SCRIPT_DIR%JavaBeasts-BBD"
 set "COMPOSE_FILE=%COMPOSE_DIR%\docker-compose.yml"
 
 docker compose version >nul 2>&1
