@@ -1,1 +1,8 @@
+# JavaBeasts-BBDD
+JavaBeasts-BBDD/data/db/mysql/*
+!JavaBeasts-BBDD/data/db/.gitkeep
 
+#El .env solo tiene información de conexión y configuración local, por lo que no hay problema en subirlo al repositorio.
+#Si se quisiera mantener privado, se podría agregar a .gitignore, 
+#pero en este caso se ha decidido incluirlo para facilitar la configuración a otros desarrolladores.
+#JavaBeasts-BBDD/.env
