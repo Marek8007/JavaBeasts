@@ -9,10 +9,10 @@
 		<relativePath/> <!-- lookup parent from repository -->
 	</parent>
 	<groupId>com.marcos</groupId>
-	<artifactId>javabeasts-backend</artifactId>
+	<artifactId>JavaBeasts-Backend</artifactId>
 	<version>0.0.1-SNAPSHOT</version>
-	<name/>
-	<description/>
+	<name>JavaBeasts-Backend</name>
+	<description>JavaBeasts backend</description>
 	<url/>
 	<licenses>
 		<license/>
