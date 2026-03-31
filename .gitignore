@@ -6,3 +6,6 @@ JavaBeasts-BBDD/data/db/mysql/*
 #Si se quisiera mantener privado, se podría agregar a .gitignore, 
 #pero en este caso se ha decidido incluirlo para facilitar la configuración a otros desarrolladores.
 #JavaBeasts-BBDD/.env
+
+# JavaBeasts-Backend
+JavaBeasts-Backend/src/main/java/com/marcos/javabeasts_backend/Testing.java
