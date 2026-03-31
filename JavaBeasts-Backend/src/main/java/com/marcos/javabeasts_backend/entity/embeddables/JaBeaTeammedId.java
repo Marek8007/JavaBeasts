@@ -19,10 +19,11 @@ public class JaBeaTeammedId implements Serializable {
     @Serial
     private static final long serialVersionUID = 1L;
 
-    @ManyToOne
-    @JoinColumn(name = "Team_Id")
-    private Team team;
+    @Column(name = "Team_Id")
+    private Integer teamId;
 
     @Column(name = "Slot")
     private Integer slot;
+
+
 }

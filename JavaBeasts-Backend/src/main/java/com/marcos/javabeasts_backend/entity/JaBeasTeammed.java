@@ -15,6 +15,11 @@ public class JaBeasTeammed {
     private JaBeaTeammedId id;
 
     @ManyToOne
+    @MapsId("teamId")
+    @JoinColumn(name = "Team_Id")
+    private Team team;
+
+    @ManyToOne
     @JoinColumn(name = "JaBeas_Id")
     private JaBeas jaBeas;
 
@@ -26,5 +31,14 @@ public class JaBeasTeammed {
     @JoinColumn(name = "Move_2")
     private Move move2;
 
+    public Integer getSlot() {
+        return id != null ? id.getSlot() : null;
+    }
 
+    public void setSlot(Integer slot) {
+        if (id == null) {
+            id = new JaBeaTeammedId();
+        }
+        id.setSlot(slot);
+    }
 }
