@@ -14,7 +14,7 @@ import java.io.Serializable;
 @Embeddable
 @Data
 @NoArgsConstructor
-public class JaBeaTeammedId implements Serializable {
+public class JaBeaTeamedId implements Serializable {
 
     @Serial
     private static final long serialVersionUID = 1L;

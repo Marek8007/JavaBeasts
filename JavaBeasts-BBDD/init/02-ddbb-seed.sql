@@ -16,7 +16,7 @@ SET FOREIGN_KEY_CHECKS = 0;
 
 TRUNCATE TABLE JaBeas_History;
 TRUNCATE TABLE Matches_History;
-TRUNCATE TABLE JaBeas_Teammed;
+TRUNCATE TABLE JaBeas_Teamed;
 TRUNCATE TABLE Teams;
 TRUNCATE TABLE Moves;
 TRUNCATE TABLE JaBeas;
@@ -167,7 +167,7 @@ VALUES
 -- 6. JABEAS_TEAMMED
 -- Each JaBea keeps its unique move plus these two selected moves.
 -- =========================
-INSERT INTO JaBeas_Teammed (Team_Id, JaBeas_Id, Move_1, Move_2, Slot)
+INSERT INTO JaBeas_Teamed (Team_Id, JaBeas_Id, Move_1, Move_2, Slot)
 VALUES
     -- Team alba
     (

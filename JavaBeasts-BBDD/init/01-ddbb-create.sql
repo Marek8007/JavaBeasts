@@ -74,7 +74,7 @@ CREATE TABLE Teams (
 -- JaBea configurado dentro de un equipo
 -- PK compuesta: un slot concreto dentro de un equipo
 -- =========================
-CREATE TABLE JaBeas_Teammed (
+CREATE TABLE JaBeas_Teamed (
     Team_Id INT NOT NULL,
     JaBeas_Id INT NOT NULL,
     Move_1 INT NOT NULL,

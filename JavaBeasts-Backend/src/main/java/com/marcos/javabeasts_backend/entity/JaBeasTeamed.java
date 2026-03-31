@@ -1,18 +1,18 @@
 package com.marcos.javabeasts_backend.entity;
 
-import com.marcos.javabeasts_backend.entity.embeddables.JaBeaTeammedId;
+import com.marcos.javabeasts_backend.entity.embeddables.JaBeaTeamedId;
 import jakarta.persistence.*;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 
 @Entity
-@Table(name ="JaBeas_Teammed")
+@Table(name ="JaBeas_Teamed")
 @Data
 @NoArgsConstructor
-public class JaBeasTeammed {
+public class JaBeasTeamed {
 
     @EmbeddedId
-    private JaBeaTeammedId id;
+    private JaBeaTeamedId id;
 
     @ManyToOne
     @MapsId("teamId")
@@ -31,13 +31,15 @@ public class JaBeasTeammed {
     @JoinColumn(name = "Move_2")
     private Move move2;
 
+
+    //Getter y setter de slot para tener más accesible desde fuera
     public Integer getSlot() {
         return id != null ? id.getSlot() : null;
     }
 
     public void setSlot(Integer slot) {
         if (id == null) {
-            id = new JaBeaTeammedId();
+            id = new JaBeaTeamedId();
         }
         id.setSlot(slot);
     }
