@@ -112,7 +112,7 @@ CREATE TABLE Matches_History (
 -- Guarda los JaBeas usados en una partida
 -- =========================
 CREATE TABLE JaBeas_History (
-    JaBeas_Hitory_Id INT AUTO_INCREMENT PRIMARY KEY,
+    JaBeas_History_Id INT AUTO_INCREMENT PRIMARY KEY,
     Match_Id INT NOT NULL,
     JaBeas_Id INT NOT NULL,
     Owner_Id INT NOT NULL,

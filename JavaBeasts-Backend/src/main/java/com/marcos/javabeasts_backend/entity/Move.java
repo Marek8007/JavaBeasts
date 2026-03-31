@@ -5,19 +5,17 @@ import lombok.Data;
 import lombok.NoArgsConstructor;
 
 @Entity
-@Table(name = "Types")
+@Table(name = "Moves")
 @Data
 @NoArgsConstructor
-public class Type {
+public class Move {
 
     @Id
-    @Column(name = "Type_Id")
     @GeneratedValue(strategy = GenerationType.IDENTITY)
-    private int typeId;
+    @Column(name = "Move_Id")
+    private int moveId;
 
-    @Column(name = "Type")
-    private String type;
-
-    @Column(name = "Description")
-    private String description;
+    @ManyToOne
+    @JoinColumn(name = "")
+    private Type type;
 }
