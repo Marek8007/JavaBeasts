@@ -8,7 +8,7 @@ import lombok.NoArgsConstructor;
 @Table(name = "Matches_History")
 @Data
 @NoArgsConstructor
-public class Match_History {
+public class MatchHistory {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)

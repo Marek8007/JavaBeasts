@@ -8,7 +8,7 @@ import lombok.NoArgsConstructor;
 @Table(name = "JaBeas_History")
 @Data
 @NoArgsConstructor
-public class JaBeas_History {
+public class JaBeasHistory {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
@@ -17,19 +17,25 @@ public class JaBeas_History {
 
     @ManyToOne
     @JoinColumn(name = "Match_Id")
-    private Match_History match;
+    private MatchHistory match;
 
     @ManyToOne
     @JoinColumn(name = "JaBeas_Id")
-    private Jabea jabeas;
+    private JaBeas jabeas;
 
     @ManyToOne
     @JoinColumn(name = "Owner_Id")
     private User owner;
 
+    @ManyToOne
+    @JoinColumn(name = "Move_1")
+    private Move move1;
 
-    private int move1;
-    private int move2;
+    @ManyToOne
+    @JoinColumn(name = "Move_2")
+    private Move move2;
+
+    @Column(name = "Slot")
     private int slot;
 
 }

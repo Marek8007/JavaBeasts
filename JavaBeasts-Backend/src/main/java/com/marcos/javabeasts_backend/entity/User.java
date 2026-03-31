@@ -17,12 +17,12 @@ public class User {
     @Column(name = "Username")
     private String username;
 
-    @Column(name = "Username")
+    @Column(name = "Password")
     private String password;
 
     @Column(name = "Matches_Won")
     private int matchesWon;
 
-    @Column(name = "Matches_Won")
+    @Column(name = "Matches_Lost")
     private int matchesLost;
 }

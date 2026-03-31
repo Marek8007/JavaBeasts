@@ -1,9 +1,7 @@
 package com.marcos.javabeasts_backend;
 
-import com.marcos.javabeasts_backend.entity.Jabea;
-import com.marcos.javabeasts_backend.entity.Type;
+import com.marcos.javabeasts_backend.entity.JaBeas;
 import com.marcos.javabeasts_backend.repositories.JaBeaRepository;
-import com.marcos.javabeasts_backend.repositories.TypeRepository;
 import org.springframework.boot.CommandLineRunner;
 import org.springframework.stereotype.Component;
 
@@ -18,7 +16,7 @@ public class Testing implements CommandLineRunner {
 
     @Override
     public void run(String... args) {
-        for (Jabea jabea : jabeaRepository.findAll()) {
+        for (JaBeas jabea : jabeaRepository.findAll()) {
             System.out.println(jabea);
         }
     }
