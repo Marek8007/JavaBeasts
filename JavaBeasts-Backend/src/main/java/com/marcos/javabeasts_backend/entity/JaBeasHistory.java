@@ -13,7 +13,7 @@ public class JaBeasHistory {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     @Column(name = "JaBeas_History_Id")
-    private int jabeasHistoryId;
+    private int jaBeasHistoryId;
 
     @ManyToOne
     @JoinColumn(name = "Match_Id")
@@ -21,7 +21,7 @@ public class JaBeasHistory {
 
     @ManyToOne
     @JoinColumn(name = "JaBeas_Id")
-    private JaBeas jabeas;
+    private JaBeas jaBeas;
 
     @ManyToOne
     @JoinColumn(name = "Owner_Id")

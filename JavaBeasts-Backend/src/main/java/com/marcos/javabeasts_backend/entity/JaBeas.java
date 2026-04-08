@@ -13,7 +13,7 @@ public class JaBeas {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     @Column(name = "JaBeas_Id")
-    private int jabeasId;
+    private int jaBeasId;
 
     @Column(name = "Name")
     private String name;
