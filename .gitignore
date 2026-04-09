@@ -9,3 +9,4 @@ JavaBeasts-BBDD/data/db/mysql/*
 
 # JavaBeasts-Backend
 JavaBeasts-Backend/src/main/java/com/marcos/javabeasts_backend/Testing.java
+/home/koibox/JavaBeasts/JavaBeasts-Backend/src/main/resources/application.properties

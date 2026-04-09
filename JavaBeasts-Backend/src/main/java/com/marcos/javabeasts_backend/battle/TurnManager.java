@@ -1,6 +1,5 @@
 package com.marcos.javabeasts_backend.battle;
 
-import com.marcos.javabeasts_backend.entity.JaBeas;
 import com.marcos.javabeasts_backend.entity.JaBeasTeamed;
 import com.marcos.javabeasts_backend.entity.Move;
 
