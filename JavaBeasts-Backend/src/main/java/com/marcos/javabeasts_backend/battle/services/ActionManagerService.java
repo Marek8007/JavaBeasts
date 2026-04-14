@@ -22,10 +22,15 @@ public class ActionManagerService {
         ArrayList<Move> availableMoves = new ArrayList<>();
         availableMoves.add(jabea.getMove1());
         availableMoves.add(jabea.getMove2());
+
         // flujo = ms.funcion -> MoveRepository.funcion
         availableMoves.add(ms.findByUniqueJabea(jabea.getJaBeas()));
 
-        System.out.printf("%s, elija una de las opciones:\n %s, %s, %s", player);
+        System.out.printf("%s, elija una de las opciones:\n", player);
+
+        for (Move move:availableMoves) {
+            System.out.printf("%s", move);
+        }
 
 
 
