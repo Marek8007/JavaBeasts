@@ -12,16 +12,16 @@ public class Team {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
-    @Column(name = "Team_Id")
+    @Column(name = "Team_Id", nullable = false)
     private int teamId;
 
-    @ManyToOne
-    @JoinColumn(name = "User_Id")
+    @ManyToOne(fetch = FetchType.LAZY, optional = false)
+    @JoinColumn(name = "User_Id", nullable = false)
     private User user;
 
-    @Column(name = "Name")
+    @Column(name = "Name", nullable = false, length = 50)
     private String name;
 
-    @Column(name = "Is_Active")
+    @Column(name = "Is_Active", nullable = false)
     private boolean active;
 }
