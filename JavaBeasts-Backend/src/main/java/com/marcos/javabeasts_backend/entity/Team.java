@@ -18,4 +18,10 @@ public class Team {
     @ManyToOne
     @JoinColumn(name = "User_Id")
     private User user;
+
+    @Column(name = "Name")
+    private String name;
+
+    @Column(name = "Is_Active")
+    private boolean active;
 }

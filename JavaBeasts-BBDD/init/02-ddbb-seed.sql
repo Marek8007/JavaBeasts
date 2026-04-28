@@ -144,24 +144,25 @@ ON DUPLICATE KEY UPDATE
 -- bruno / bruno123
 -- carla / carla123
 -- =========================
-INSERT INTO Users (Username, Password, Matches_Won, Matches_Lost)
+INSERT INTO Users (Username, Password, Is_Logged, Matches_Won, Matches_Lost)
 VALUES
-    ('alba', '$argon2i$v=19$m=65536,t=4,p=1$WC50N1J0czdYYWVjNERIVA$oS4z6HjnDOu68l/AQwo31nqb6CiIz7a2BLf0rXrETr0', 1, 1),
-    ('bruno', '$argon2i$v=19$m=65536,t=4,p=1$MmkucUJqcEZrR1hWQ1BWZA$/zL9Kp6r/aLXou+kIVD0uzhcH2fix+NP2GF/55A1j+c', 0, 1),
-    ('carla', '$argon2i$v=19$m=65536,t=4,p=1$OTdVZk54elF5VnNRakswVg$/070gF2txMz4NVsLT0lNaXFyU4opLtRq0C3fRu5OVLg', 1, 0)
+    ('alba', '$argon2i$v=19$m=65536,t=4,p=1$WC50N1J0czdYYWVjNERIVA$oS4z6HjnDOu68l/AQwo31nqb6CiIz7a2BLf0rXrETr0', FALSE, 1, 1),
+    ('bruno', '$argon2i$v=19$m=65536,t=4,p=1$MmkucUJqcEZrR1hWQ1BWZA$/zL9Kp6r/aLXou+kIVD0uzhcH2fix+NP2GF/55A1j+c', FALSE, 0, 1),
+    ('carla', '$argon2i$v=19$m=65536,t=4,p=1$OTdVZk54elF5VnNRakswVg$/070gF2txMz4NVsLT0lNaXFyU4opLtRq0C3fRu5OVLg', FALSE, 1, 0)
 ON DUPLICATE KEY UPDATE
     Password = VALUES(Password),
+    Is_Logged = VALUES(Is_Logged),
     Matches_Won = VALUES(Matches_Won),
     Matches_Lost = VALUES(Matches_Lost);
 
 -- =========================
 -- 5. TEAMS
 -- =========================
-INSERT INTO Teams (User_Id)
+INSERT INTO Teams (User_Id, Name, Is_Active)
 VALUES
-    ((SELECT User_Id FROM Users WHERE Username = 'alba')),
-    ((SELECT User_Id FROM Users WHERE Username = 'bruno')),
-    ((SELECT User_Id FROM Users WHERE Username = 'carla'));
+    ((SELECT User_Id FROM Users WHERE Username = 'alba'), 'Equipo Alba 1', TRUE),
+    ((SELECT User_Id FROM Users WHERE Username = 'bruno'), 'Equipo Bruno 1', TRUE),
+    ((SELECT User_Id FROM Users WHERE Username = 'carla'), 'Equipo Carla 1', TRUE);
 
 -- =========================
 -- 6. JABEAS_TEAMMED

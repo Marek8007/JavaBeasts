@@ -20,6 +20,9 @@ public class User {
     @Column(name = "Password")
     private String password;
 
+    @Column(name = "Is_Logged")
+    private boolean logged;
+
     @Column(name = "Matches_Won")
     private int matchesWon;
 

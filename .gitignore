@@ -2,11 +2,8 @@
 JavaBeasts-BBDD/data/db/mysql/*
 !JavaBeasts-BBDD/data/db/.gitkeep
 
-#El .env solo tiene información de conexión y configuración local, por lo que no hay problema en subirlo al repositorio.
-#Si se quisiera mantener privado, se podría agregar a .gitignore, 
-#pero en este caso se ha decidido incluirlo para facilitar la configuración a otros desarrolladores.
-#JavaBeasts-BBDD/.env
+JavaBeasts-BBDD/.env
+JavaBeasts-Backend/.env
 
 # JavaBeasts-Backend
 JavaBeasts-Backend/src/main/java/com/marcos/javabeasts_backend/Testing.java
-/home/koibox/JavaBeasts/JavaBeasts-Backend/src/main/resources/application.properties
