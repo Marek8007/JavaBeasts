@@ -38,12 +38,4 @@ public class Move {
     @JoinColumn(name = "Unique_JaBeas_Id")
     private JaBeas uniqueJabea;
 
-    public String printMove() {
-        if (this.specialEffect!=null) {
-
-    }
-    
-        System.out.printf("Nombre: %s\nTipo: %s\nDaño: %s - Precisión: %s\nDescripción: %s\n",
-                );
-    }
 }
