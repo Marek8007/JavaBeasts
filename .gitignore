@@ -1,0 +1,9 @@
+# JavaBeasts-BBDD
+JavaBeasts-BBDD/data/db/mysql/*
+!JavaBeasts-BBDD/data/db/.gitkeep
+
+JavaBeasts-BBDD/.env
+JavaBeasts-Backend/.env
+
+# JavaBeasts-Backend
+JavaBeasts-Backend/src/main/java/com/marcos/javabeasts_backend/Testing.java
