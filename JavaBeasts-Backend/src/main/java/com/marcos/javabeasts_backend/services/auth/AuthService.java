@@ -49,6 +49,10 @@ public class AuthService {
             throw new ResponseStatusException(HttpStatus.UNAUTHORIZED, "Credenciales incorrectas");
         }
 
+        if (user.isLogged()) {
+            throw new ResponseStatusException(HttpStatus.CONFLICT, "Usuario ya en línea");
+        }
+
         user.setLogged(true);
 
         return toResponse(userRepository.save(user), "Inicio de sesion correcto");
