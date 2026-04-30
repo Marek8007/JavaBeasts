@@ -14,4 +14,5 @@ public interface TeamRepository extends JpaRepository<Team, Integer> {
     Optional<Team> findByTeamIdAndUserUserId(Integer teamId, Integer userId);
 
     Optional<Team> findByUserUserIdAndActiveTrue(Integer userId);
+
 }
