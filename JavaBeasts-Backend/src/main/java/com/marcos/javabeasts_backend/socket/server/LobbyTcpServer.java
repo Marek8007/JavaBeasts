@@ -9,6 +9,7 @@ import org.springframework.stereotype.Component;
 import java.io.IOException;
 import java.net.ServerSocket;
 import java.net.Socket;
+import java.net.Inet4Address;
 
 @Component
 public class LobbyTcpServer {
@@ -39,7 +40,7 @@ public class LobbyTcpServer {
     }
 
     private void acceptLoop() {
-        try (ServerSocket server = new ServerSocket(socketPort)) {
+        try (ServerSocket server = new ServerSocket(socketPort, 50, Inet4Address.getByName("0.0.0.0"))) {
             this.serverSocket = server;
             System.out.println("[TCP LOBBY] Escuchando en puerto " + socketPort);
 
