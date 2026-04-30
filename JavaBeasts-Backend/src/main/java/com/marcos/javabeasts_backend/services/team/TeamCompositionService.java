@@ -144,7 +144,7 @@ public class TeamCompositionService {
 
         boolean allowed = moveType.equals(jaBeaType)
                 || moveType.equals("Normal")
-                || (mirrorType != null && moveType.equals(mirrorType));
+                || moveType.equals(mirrorType);
 
         if (!allowed) {
             throw new ResponseStatusException(
