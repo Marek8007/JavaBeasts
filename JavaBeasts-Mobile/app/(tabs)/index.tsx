@@ -1,98 +1,127 @@
-import { Image } from 'expo-image';
-import { Platform, StyleSheet } from 'react-native';
-
-import { HelloWave } from '@/components/hello-wave';
-import ParallaxScrollView from '@/components/parallax-scroll-view';
-import { ThemedText } from '@/components/themed-text';
-import { ThemedView } from '@/components/themed-view';
-import { Link } from 'expo-router';
+import { logoutAction } from '@/actions/auth.actions';
+import { useAuthStore } from '@/stores/authStore';
+import { Ionicons } from '@expo/vector-icons';
+import { router } from 'expo-router';
+import { Alert, Pressable, SafeAreaView, StyleSheet, Text, View } from 'react-native';
 
 export default function HomeScreen() {
-  return (
-    <ParallaxScrollView
-      headerBackgroundColor={{ light: '#A1CEDC', dark: '#1D3D47' }}
-      headerImage={
-        <Image
-          source={require('@/assets/images/partial-react-logo.png')}
-          style={styles.reactLogo}
-        />
-      }>
-      <ThemedView style={styles.titleContainer}>
-        <ThemedText type="title">Welcome!</ThemedText>
-        <HelloWave />
-      </ThemedView>
-      <ThemedView style={styles.stepContainer}>
-        <ThemedText type="subtitle">Step 1: Try it</ThemedText>
-        <ThemedText>
-          Edit <ThemedText type="defaultSemiBold">app/(tabs)/index.tsx</ThemedText> to see changes.
-          Press{' '}
-          <ThemedText type="defaultSemiBold">
-            {Platform.select({
-              ios: 'cmd + d',
-              android: 'cmd + m',
-              web: 'F12',
-            })}
-          </ThemedText>{' '}
-          to open developer tools.
-        </ThemedText>
-      </ThemedView>
-      <ThemedView style={styles.stepContainer}>
-        <Link href="/modal">
-          <Link.Trigger>
-            <ThemedText type="subtitle">Step 2: Explore</ThemedText>
-          </Link.Trigger>
-          <Link.Preview />
-          <Link.Menu>
-            <Link.MenuAction title="Action" icon="cube" onPress={() => alert('Action pressed')} />
-            <Link.MenuAction
-              title="Share"
-              icon="square.and.arrow.up"
-              onPress={() => alert('Share pressed')}
-            />
-            <Link.Menu title="More" icon="ellipsis">
-              <Link.MenuAction
-                title="Delete"
-                icon="trash"
-                destructive
-                onPress={() => alert('Delete pressed')}
-              />
-            </Link.Menu>
-          </Link.Menu>
-        </Link>
+  const user = useAuthStore((state) => state.user);
+  const clearSession = useAuthStore((state) => state.logout);
 
-        <ThemedText>
-          {`Tap the Explore tab to learn more about what's included in this starter app.`}
-        </ThemedText>
-      </ThemedView>
-      <ThemedView style={styles.stepContainer}>
-        <ThemedText type="subtitle">Step 3: Get a fresh start</ThemedText>
-        <ThemedText>
-          {`When you're ready, run `}
-          <ThemedText type="defaultSemiBold">npm run reset-project</ThemedText> to get a fresh{' '}
-          <ThemedText type="defaultSemiBold">app</ThemedText> directory. This will move the current{' '}
-          <ThemedText type="defaultSemiBold">app</ThemedText> to{' '}
-          <ThemedText type="defaultSemiBold">app-example</ThemedText>.
-        </ThemedText>
-      </ThemedView>
-    </ParallaxScrollView>
+  async function handleLogout() {
+    try {
+      if (user) {
+        await logoutAction(user.username);
+      }
+    } catch {
+      Alert.alert('Aviso', 'No se pudo cerrar sesion en el backend, pero se limpiara la sesion local.');
+    } finally {
+      await clearSession();
+      router.replace('/(auth)/login');
+    }
+  }
+
+  return (
+    <SafeAreaView style={styles.safeArea}>
+      <View style={styles.screen}>
+        <View style={styles.header}>
+          <Text style={styles.brand}>JavaBeasts</Text>
+          <Text style={styles.subtitle}>Mando movil conectado al backend.</Text>
+        </View>
+
+        <View style={styles.panel}>
+          <View style={styles.iconBadge}>
+            <Ionicons name="person-circle-outline" size={42} color="#1e4f8f" />
+          </View>
+          <Text style={styles.panelTitle}>{user?.username ?? 'Jugador'}</Text>
+          <Text style={styles.stats}>
+            Victorias {user?.matchesWon ?? 0} - Derrotas {user?.matchesLost ?? 0}
+          </Text>
+          <Text style={styles.message}>Sesion lista para gestionar equipos y entrar al lobby.</Text>
+
+          <Pressable
+            onPress={handleLogout}
+            style={({ pressed }) => [styles.secondaryButton, pressed && styles.pressed]}>
+            <Text style={styles.secondaryButtonText}>Cerrar sesion</Text>
+          </Pressable>
+        </View>
+      </View>
+    </SafeAreaView>
   );
 }
 
 const styles = StyleSheet.create({
-  titleContainer: {
-    flexDirection: 'row',
+  safeArea: {
+    flex: 1,
+    backgroundColor: '#f3f6fb',
+  },
+  screen: {
+    flex: 1,
+    justifyContent: 'center',
+    paddingHorizontal: 24,
+  },
+  header: {
+    gap: 8,
+    marginBottom: 24,
+  },
+  brand: {
+    color: '#172033',
+    fontSize: 34,
+    fontWeight: '800',
+  },
+  subtitle: {
+    color: '#5d6678',
+    fontSize: 16,
+  },
+  panel: {
     alignItems: 'center',
-    gap: 8,
+    backgroundColor: '#ffffff',
+    borderRadius: 8,
+    gap: 12,
+    padding: 22,
+    shadowColor: '#172033',
+    shadowOffset: { width: 0, height: 10 },
+    shadowOpacity: 0.08,
+    shadowRadius: 18,
+    elevation: 3,
   },
-  stepContainer: {
-    gap: 8,
-    marginBottom: 8,
+  iconBadge: {
+    backgroundColor: '#e8edf5',
+    borderRadius: 8,
+    padding: 10,
   },
-  reactLogo: {
-    height: 178,
-    width: 290,
-    bottom: 0,
-    left: 0,
-    position: 'absolute',
+  panelTitle: {
+    color: '#172033',
+    fontSize: 26,
+    fontWeight: '800',
+  },
+  stats: {
+    color: '#5d6678',
+    fontSize: 15,
+  },
+  message: {
+    color: '#42506a',
+    fontSize: 14,
+    lineHeight: 20,
+    textAlign: 'center',
+  },
+  secondaryButton: {
+    alignItems: 'center',
+    borderColor: '#1e4f8f',
+    borderRadius: 8,
+    borderWidth: 1,
+    justifyContent: 'center',
+    marginTop: 8,
+    minHeight: 48,
+    paddingHorizontal: 18,
+    width: '100%',
+  },
+  secondaryButtonText: {
+    color: '#1e4f8f',
+    fontSize: 15,
+    fontWeight: '800',
+  },
+  pressed: {
+    opacity: 0.82,
   },
 });
