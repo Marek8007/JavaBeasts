@@ -1,25 +1,33 @@
 import { TeamResponse } from '@/interfaces/team.interface';
 import { Ionicons } from '@expo/vector-icons';
-import { ActivityIndicator, Pressable, StyleSheet, Text, View } from 'react-native';
+import { ActivityIndicator, Pressable, Text, View } from 'react-native';
 
 type TeamListRowProps = {
   activating?: boolean;
   disabled?: boolean;
   onActivate?: () => void;
+  onRename?: () => void;
   team: TeamResponse;
 };
 
-export function TeamListRow({ activating = false, disabled = false, onActivate, team }: TeamListRowProps) {
+export function TeamListRow({
+  activating = false,
+  disabled = false,
+  onActivate,
+  onRename,
+  team,
+}: TeamListRowProps) {
   return (
-    <View style={[styles.row, disabled && styles.disabled]}>
+    <View
+      className={`min-h-[68px] flex-row items-center border-b border-[#edf1f6] bg-white px-4 py-[9px] ${
+        disabled ? 'opacity-65' : ''
+      }`}>
       <Pressable
+        className={`mr-3 h-[50px] w-[50px] items-center justify-center rounded-lg active:opacity-75 ${
+          team.active ? 'bg-beasts-blue' : 'bg-[#e8edf5]'
+        }`}
         disabled={disabled || team.active}
-        onPress={onActivate}
-        style={({ pressed }) => [
-          styles.avatar,
-          team.active && styles.avatarActive,
-          pressed && styles.pressed,
-        ]}>
+        onPress={onActivate}>
         {activating ? (
           <ActivityIndicator color="#1e4f8f" />
         ) : (
@@ -31,53 +39,18 @@ export function TeamListRow({ activating = false, disabled = false, onActivate, 
         )}
       </Pressable>
 
-      <View style={styles.content}>
-        <Text numberOfLines={1} style={styles.title}>
+      <View className="flex-1 justify-center">
+        <Text className="text-base font-extrabold text-beasts-ink" numberOfLines={1}>
           {team.name}
         </Text>
       </View>
 
-      <Ionicons name="chevron-forward" size={18} color="#9aa5b5" />
+      <Pressable
+        className="ml-2 h-10 w-10 items-center justify-center active:opacity-75"
+        disabled={disabled}
+        onPress={onRename}>
+        <Ionicons name="create-outline" size={20} color="#68758a" />
+      </Pressable>
     </View>
   );
 }
-
-const styles = StyleSheet.create({
-  row: {
-    alignItems: 'center',
-    backgroundColor: '#ffffff',
-    borderBottomColor: '#edf1f6',
-    borderBottomWidth: 1,
-    flexDirection: 'row',
-    minHeight: 68,
-    paddingHorizontal: 16,
-    paddingVertical: 9,
-  },
-  pressed: {
-    opacity: 0.75,
-  },
-  disabled: {
-    opacity: 0.65,
-  },
-  avatar: {
-    alignItems: 'center',
-    backgroundColor: '#e8edf5',
-    borderRadius: 8,
-    height: 50,
-    justifyContent: 'center',
-    marginRight: 12,
-    width: 50,
-  },
-  avatarActive: {
-    backgroundColor: '#1e4f8f',
-  },
-  content: {
-    flex: 1,
-    justifyContent: 'center',
-  },
-  title: {
-    color: '#172033',
-    fontSize: 16,
-    fontWeight: '800',
-  },
-});

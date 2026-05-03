@@ -1,4 +1,9 @@
-import { activateTeamAction, getTeamsByUserAction } from '@/actions/team.actions';
+import {
+  activateTeamAction,
+  createTeamAction,
+  getTeamsByUserAction,
+  renameTeamAction,
+} from '@/actions/team.actions';
 import { TeamListRow } from '@/components/ui/team-list-row';
 import { TeamResponse } from '@/interfaces/team.interface';
 import { useAuthStore } from '@/stores/authStore';
@@ -7,11 +12,12 @@ import { useCallback, useEffect, useState } from 'react';
 import {
   ActivityIndicator,
   FlatList,
+  Modal,
   Pressable,
   RefreshControl,
   SafeAreaView,
-  StyleSheet,
   Text,
+  TextInput,
   View,
 } from 'react-native';
 
@@ -21,6 +27,10 @@ export default function TeamsScreen() {
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
   const [activatingTeamId, setActivatingTeamId] = useState<number | null>(null);
+  const [savingTeam, setSavingTeam] = useState(false);
+  const [editingTeam, setEditingTeam] = useState<TeamResponse | null>(null);
+  const [teamName, setTeamName] = useState('');
+  const [modalVisible, setModalVisible] = useState(false);
   const [error, setError] = useState('');
 
   const loadTeams = useCallback(async () => {
@@ -80,41 +90,117 @@ export default function TeamsScreen() {
     }
   }
 
+  function openCreateModal() {
+    setEditingTeam(null);
+    setTeamName('');
+    setModalVisible(true);
+  }
+
+  function openRenameModal(team: TeamResponse) {
+    setEditingTeam(team);
+    setTeamName(team.name);
+    setModalVisible(true);
+  }
+
+  function closeModal() {
+    if (savingTeam) {
+      return;
+    }
+
+    setModalVisible(false);
+    setEditingTeam(null);
+    setTeamName('');
+  }
+
+  async function saveTeam() {
+    if (!user || savingTeam) {
+      return;
+    }
+
+    const trimmedName = teamName.trim();
+
+    if (trimmedName.length < 3 || trimmedName.length > 50) {
+      setError('El nombre del equipo debe tener entre 3 y 50 caracteres.');
+      return;
+    }
+
+    setSavingTeam(true);
+    setError('');
+
+    try {
+      if (editingTeam) {
+        await renameTeamAction(user.userId, editingTeam.teamId, trimmedName);
+      } else {
+        await createTeamAction(user.userId, trimmedName);
+      }
+
+      setModalVisible(false);
+      setEditingTeam(null);
+      setTeamName('');
+      await loadTeams();
+    } catch (requestError: any) {
+      const message =
+        requestError?.response?.data?.message ??
+        requestError?.response?.data?.detail ??
+        requestError?.message ??
+        'No se pudo guardar el equipo';
+      setError(String(message));
+    } finally {
+      setSavingTeam(false);
+    }
+  }
+
   const activeTeam = teams.find((team) => team.active);
 
   return (
-    <SafeAreaView style={styles.safeArea}>
-      <View style={styles.screen}>
-        <View style={styles.header}>
+    <SafeAreaView className="flex-1 bg-beasts-soft">
+      <View className="flex-1 px-[18px] pt-[18px]">
+        <View className="mb-[18px] flex-row items-center justify-between">
           <View>
-            <Text style={styles.title}>Equipos</Text>
-            <Text style={styles.subtitle}>
+            <Text className="text-3xl font-extrabold text-beasts-ink">Equipos</Text>
+            <Text className="mt-1 max-w-[270px] text-sm text-beasts-muted">
               {activeTeam ? `Activo: ${activeTeam.name}` : 'Selecciona un equipo activo antes de jugar.'}
             </Text>
           </View>
 
-          <Pressable onPress={refreshTeams} style={styles.refreshButton}>
-            <Ionicons name="refresh" size={20} color="#1e4f8f" />
-          </Pressable>
+          <View className="flex-row gap-2.5">
+            <Pressable
+              className="h-[42px] w-[42px] items-center justify-center rounded-lg bg-white active:opacity-80"
+              onPress={openCreateModal}>
+              <Ionicons name="add" size={22} color="#1e4f8f" />
+            </Pressable>
+            <Pressable
+              className="h-[42px] w-[42px] items-center justify-center rounded-lg bg-white active:opacity-80"
+              onPress={refreshTeams}>
+              <Ionicons name="refresh" size={20} color="#1e4f8f" />
+            </Pressable>
+          </View>
         </View>
 
         {loading ? (
-          <View style={styles.centerState}>
+          <View className="flex-1 items-center justify-center px-6">
             <ActivityIndicator color="#1e4f8f" />
-            <Text style={styles.stateText}>Cargando equipos...</Text>
+            <Text className="mt-2 text-center text-sm leading-5 text-beasts-muted">
+              Cargando equipos...
+            </Text>
           </View>
         ) : error ? (
-          <View style={styles.centerState}>
+          <View className="flex-1 items-center justify-center px-6">
             <Ionicons name="warning-outline" size={28} color="#b54708" />
-            <Text style={styles.stateTitle}>No se han podido cargar</Text>
-            <Text style={styles.stateText}>{error}</Text>
-            <Pressable onPress={refreshTeams} style={styles.retryButton}>
-              <Text style={styles.retryButtonText}>Reintentar</Text>
+            <Text className="mt-2.5 text-center text-[17px] font-extrabold text-beasts-ink">
+              No se han podido cargar
+            </Text>
+            <Text className="mt-2 text-center text-sm leading-5 text-beasts-muted">{error}</Text>
+            <Pressable
+              className="mt-4 min-h-11 items-center justify-center rounded-lg bg-beasts-blue px-[18px] active:opacity-80"
+              onPress={refreshTeams}>
+              <Text className="text-sm font-extrabold text-white">Reintentar</Text>
             </Pressable>
           </View>
         ) : (
           <FlatList
-            contentContainerStyle={teams.length === 0 ? styles.emptyList : styles.listContent}
+            className="rounded-lg bg-white"
+            contentContainerClassName={teams.length === 0 ? 'grow justify-center' : 'py-1'}
             data={teams}
             keyExtractor={(team) => String(team.teamId)}
             refreshControl={
@@ -125,102 +211,65 @@ export default function TeamsScreen() {
                 activating={activatingTeamId === item.teamId}
                 disabled={activatingTeamId !== null}
                 onActivate={() => void activateTeam(item)}
+                onRename={() => openRenameModal(item)}
                 team={item}
               />
             )}
             ListEmptyComponent={
-              <View style={styles.centerState}>
+              <View className="flex-1 items-center justify-center px-6">
                 <Ionicons name="albums-outline" size={30} color="#68758a" />
-                <Text style={styles.stateTitle}>Todavia no tienes equipos</Text>
-                <Text style={styles.stateText}>Crea tu primer equipo desde la gestion de equipos.</Text>
+                <Text className="mt-2.5 text-center text-[17px] font-extrabold text-beasts-ink">
+                  Todavia no tienes equipos
+                </Text>
+                <Text className="mt-2 text-center text-sm leading-5 text-beasts-muted">
+                  Crea tu primer equipo desde la gestion de equipos.
+                </Text>
               </View>
             }
-            style={styles.list}
           />
         )}
+
+        <Modal animationType="fade" transparent visible={modalVisible} onRequestClose={closeModal}>
+          <View className="flex-1 items-center justify-center bg-[rgba(23,32,51,0.45)] px-6">
+            <View className="w-full gap-4 rounded-lg bg-white p-[18px]">
+              <Text className="text-xl font-extrabold text-beasts-ink">
+                {editingTeam ? 'Renombrar equipo' : 'Crear equipo'}
+              </Text>
+              <TextInput
+                autoCapitalize="sentences"
+                autoFocus
+                className="min-h-12 rounded-lg border border-beasts-line bg-[#f8fafc] px-3.5 text-base text-beasts-ink"
+                maxLength={50}
+                onChangeText={setTeamName}
+                placeholder="Nombre del equipo"
+                placeholderTextColor="#8a93a3"
+                value={teamName}
+              />
+
+              <View className="flex-row justify-end gap-2.5">
+                <Pressable
+                  className="min-h-11 items-center justify-center rounded-lg border border-beasts-line px-4 active:opacity-80"
+                  disabled={savingTeam}
+                  onPress={closeModal}>
+                  <Text className="text-sm font-extrabold text-[#42506a]">Cancelar</Text>
+                </Pressable>
+                <Pressable
+                  className={`min-h-11 min-w-[102px] items-center justify-center rounded-lg bg-beasts-blue px-4 active:opacity-80 ${
+                    savingTeam ? 'opacity-65' : ''
+                  }`}
+                  disabled={savingTeam}
+                  onPress={() => void saveTeam()}>
+                  {savingTeam ? (
+                    <ActivityIndicator color="#ffffff" />
+                  ) : (
+                    <Text className="text-sm font-extrabold text-white">Guardar</Text>
+                  )}
+                </Pressable>
+              </View>
+            </View>
+          </View>
+        </Modal>
       </View>
     </SafeAreaView>
   );
 }
-
-const styles = StyleSheet.create({
-  safeArea: {
-    flex: 1,
-    backgroundColor: '#f3f6fb',
-  },
-  screen: {
-    flex: 1,
-    paddingHorizontal: 18,
-    paddingTop: 18,
-  },
-  header: {
-    alignItems: 'center',
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    marginBottom: 18,
-  },
-  title: {
-    color: '#172033',
-    fontSize: 30,
-    fontWeight: '800',
-  },
-  subtitle: {
-    color: '#5d6678',
-    fontSize: 14,
-    marginTop: 4,
-    maxWidth: 270,
-  },
-  refreshButton: {
-    alignItems: 'center',
-    backgroundColor: '#ffffff',
-    borderRadius: 8,
-    height: 42,
-    justifyContent: 'center',
-    width: 42,
-  },
-  list: {
-    backgroundColor: '#ffffff',
-    borderRadius: 8,
-  },
-  listContent: {
-    paddingVertical: 4,
-  },
-  emptyList: {
-    flexGrow: 1,
-    justifyContent: 'center',
-  },
-  centerState: {
-    alignItems: 'center',
-    flex: 1,
-    justifyContent: 'center',
-    paddingHorizontal: 24,
-  },
-  stateTitle: {
-    color: '#172033',
-    fontSize: 17,
-    fontWeight: '800',
-    marginTop: 10,
-    textAlign: 'center',
-  },
-  stateText: {
-    color: '#5d6678',
-    fontSize: 14,
-    lineHeight: 20,
-    marginTop: 8,
-    textAlign: 'center',
-  },
-  retryButton: {
-    alignItems: 'center',
-    backgroundColor: '#1e4f8f',
-    borderRadius: 8,
-    justifyContent: 'center',
-    marginTop: 16,
-    minHeight: 44,
-    paddingHorizontal: 18,
-  },
-  retryButtonText: {
-    color: '#ffffff',
-    fontSize: 14,
-    fontWeight: '800',
-  },
-});
