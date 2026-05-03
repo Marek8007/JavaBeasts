@@ -1,112 +1,195 @@
-import { Image } from 'expo-image';
-import { Platform, StyleSheet } from 'react-native';
+import { getTeamsByUserAction } from '@/actions/team.actions';
+import { TeamListRow } from '@/components/ui/team-list-row';
+import { TeamResponse } from '@/interfaces/team.interface';
+import { useAuthStore } from '@/stores/authStore';
+import { Ionicons } from '@expo/vector-icons';
+import { useCallback, useEffect, useState } from 'react';
+import {
+  ActivityIndicator,
+  FlatList,
+  Pressable,
+  RefreshControl,
+  SafeAreaView,
+  StyleSheet,
+  Text,
+  View,
+} from 'react-native';
 
-import { Collapsible } from '@/components/ui/collapsible';
-import { ExternalLink } from '@/components/external-link';
-import ParallaxScrollView from '@/components/parallax-scroll-view';
-import { ThemedText } from '@/components/themed-text';
-import { ThemedView } from '@/components/themed-view';
-import { IconSymbol } from '@/components/ui/icon-symbol';
-import { Fonts } from '@/constants/theme';
+export default function TeamsScreen() {
+  const user = useAuthStore((state) => state.user);
+  const [teams, setTeams] = useState<TeamResponse[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [refreshing, setRefreshing] = useState(false);
+  const [error, setError] = useState('');
 
-export default function TabTwoScreen() {
+  const loadTeams = useCallback(async () => {
+    if (!user) {
+      setTeams([]);
+      setLoading(false);
+      return;
+    }
+
+    setError('');
+
+    try {
+      const userTeams = await getTeamsByUserAction(user.userId);
+      setTeams(userTeams);
+    } catch (requestError: any) {
+      const message =
+        requestError?.response?.data?.message ??
+        requestError?.response?.data?.detail ??
+        requestError?.message ??
+        'No se pudieron cargar los equipos';
+      setError(String(message));
+    } finally {
+      setLoading(false);
+      setRefreshing(false);
+    }
+  }, [user]);
+
+  useEffect(() => {
+    void loadTeams();
+  }, [loadTeams]);
+
+  function refreshTeams() {
+    setRefreshing(true);
+    void loadTeams();
+  }
+
+  const activeTeam = teams.find((team) => team.active);
+
   return (
-    <ParallaxScrollView
-      headerBackgroundColor={{ light: '#D0D0D0', dark: '#353636' }}
-      headerImage={
-        <IconSymbol
-          size={310}
-          color="#808080"
-          name="chevron.left.forwardslash.chevron.right"
-          style={styles.headerImage}
-        />
-      }>
-      <ThemedView style={styles.titleContainer}>
-        <ThemedText
-          type="title"
-          style={{
-            fontFamily: Fonts.rounded,
-          }}>
-          Explore
-        </ThemedText>
-      </ThemedView>
-      <ThemedText>This app includes example code to help you get started.</ThemedText>
-      <Collapsible title="File-based routing">
-        <ThemedText>
-          This app has two screens:{' '}
-          <ThemedText type="defaultSemiBold">app/(tabs)/index.tsx</ThemedText> and{' '}
-          <ThemedText type="defaultSemiBold">app/(tabs)/explore.tsx</ThemedText>
-        </ThemedText>
-        <ThemedText>
-          The layout file in <ThemedText type="defaultSemiBold">app/(tabs)/_layout.tsx</ThemedText>{' '}
-          sets up the tab navigator.
-        </ThemedText>
-        <ExternalLink href="https://docs.expo.dev/router/introduction">
-          <ThemedText type="link">Learn more</ThemedText>
-        </ExternalLink>
-      </Collapsible>
-      <Collapsible title="Android, iOS, and web support">
-        <ThemedText>
-          You can open this project on Android, iOS, and the web. To open the web version, press{' '}
-          <ThemedText type="defaultSemiBold">w</ThemedText> in the terminal running this project.
-        </ThemedText>
-      </Collapsible>
-      <Collapsible title="Images">
-        <ThemedText>
-          For static images, you can use the <ThemedText type="defaultSemiBold">@2x</ThemedText> and{' '}
-          <ThemedText type="defaultSemiBold">@3x</ThemedText> suffixes to provide files for
-          different screen densities
-        </ThemedText>
-        <Image
-          source={require('@/assets/images/react-logo.png')}
-          style={{ width: 100, height: 100, alignSelf: 'center' }}
-        />
-        <ExternalLink href="https://reactnative.dev/docs/images">
-          <ThemedText type="link">Learn more</ThemedText>
-        </ExternalLink>
-      </Collapsible>
-      <Collapsible title="Light and dark mode components">
-        <ThemedText>
-          This template has light and dark mode support. The{' '}
-          <ThemedText type="defaultSemiBold">useColorScheme()</ThemedText> hook lets you inspect
-          what the user&apos;s current color scheme is, and so you can adjust UI colors accordingly.
-        </ThemedText>
-        <ExternalLink href="https://docs.expo.dev/develop/user-interface/color-themes/">
-          <ThemedText type="link">Learn more</ThemedText>
-        </ExternalLink>
-      </Collapsible>
-      <Collapsible title="Animations">
-        <ThemedText>
-          This template includes an example of an animated component. The{' '}
-          <ThemedText type="defaultSemiBold">components/HelloWave.tsx</ThemedText> component uses
-          the powerful{' '}
-          <ThemedText type="defaultSemiBold" style={{ fontFamily: Fonts.mono }}>
-            react-native-reanimated
-          </ThemedText>{' '}
-          library to create a waving hand animation.
-        </ThemedText>
-        {Platform.select({
-          ios: (
-            <ThemedText>
-              The <ThemedText type="defaultSemiBold">components/ParallaxScrollView.tsx</ThemedText>{' '}
-              component provides a parallax effect for the header image.
-            </ThemedText>
-          ),
-        })}
-      </Collapsible>
-    </ParallaxScrollView>
+    <SafeAreaView style={styles.safeArea}>
+      <View style={styles.screen}>
+        <View style={styles.header}>
+          <View>
+            <Text style={styles.title}>Equipos</Text>
+            <Text style={styles.subtitle}>
+              {activeTeam ? `Activo: ${activeTeam.name}` : 'Selecciona un equipo activo antes de jugar.'}
+            </Text>
+          </View>
+
+          <Pressable onPress={refreshTeams} style={styles.refreshButton}>
+            <Ionicons name="refresh" size={20} color="#1e4f8f" />
+          </Pressable>
+        </View>
+
+        {loading ? (
+          <View style={styles.centerState}>
+            <ActivityIndicator color="#1e4f8f" />
+            <Text style={styles.stateText}>Cargando equipos...</Text>
+          </View>
+        ) : error ? (
+          <View style={styles.centerState}>
+            <Ionicons name="warning-outline" size={28} color="#b54708" />
+            <Text style={styles.stateTitle}>No se han podido cargar</Text>
+            <Text style={styles.stateText}>{error}</Text>
+            <Pressable onPress={refreshTeams} style={styles.retryButton}>
+              <Text style={styles.retryButtonText}>Reintentar</Text>
+            </Pressable>
+          </View>
+        ) : (
+          <FlatList
+            contentContainerStyle={teams.length === 0 ? styles.emptyList : styles.listContent}
+            data={teams}
+            keyExtractor={(team) => String(team.teamId)}
+            refreshControl={
+              <RefreshControl refreshing={refreshing} tintColor="#1e4f8f" onRefresh={refreshTeams} />
+            }
+            renderItem={({ item }) => <TeamListRow team={item} />}
+            ListEmptyComponent={
+              <View style={styles.centerState}>
+                <Ionicons name="albums-outline" size={30} color="#68758a" />
+                <Text style={styles.stateTitle}>Todavia no tienes equipos</Text>
+                <Text style={styles.stateText}>Crea tu primer equipo desde la gestion de equipos.</Text>
+              </View>
+            }
+            style={styles.list}
+          />
+        )}
+      </View>
+    </SafeAreaView>
   );
 }
 
 const styles = StyleSheet.create({
-  headerImage: {
-    color: '#808080',
-    bottom: -90,
-    left: -35,
-    position: 'absolute',
+  safeArea: {
+    flex: 1,
+    backgroundColor: '#f3f6fb',
   },
-  titleContainer: {
+  screen: {
+    flex: 1,
+    paddingHorizontal: 18,
+    paddingTop: 18,
+  },
+  header: {
+    alignItems: 'center',
     flexDirection: 'row',
-    gap: 8,
+    justifyContent: 'space-between',
+    marginBottom: 18,
+  },
+  title: {
+    color: '#172033',
+    fontSize: 30,
+    fontWeight: '800',
+  },
+  subtitle: {
+    color: '#5d6678',
+    fontSize: 14,
+    marginTop: 4,
+    maxWidth: 270,
+  },
+  refreshButton: {
+    alignItems: 'center',
+    backgroundColor: '#ffffff',
+    borderRadius: 8,
+    height: 42,
+    justifyContent: 'center',
+    width: 42,
+  },
+  list: {
+    backgroundColor: '#ffffff',
+    borderRadius: 8,
+  },
+  listContent: {
+    paddingVertical: 4,
+  },
+  emptyList: {
+    flexGrow: 1,
+    justifyContent: 'center',
+  },
+  centerState: {
+    alignItems: 'center',
+    flex: 1,
+    justifyContent: 'center',
+    paddingHorizontal: 24,
+  },
+  stateTitle: {
+    color: '#172033',
+    fontSize: 17,
+    fontWeight: '800',
+    marginTop: 10,
+    textAlign: 'center',
+  },
+  stateText: {
+    color: '#5d6678',
+    fontSize: 14,
+    lineHeight: 20,
+    marginTop: 8,
+    textAlign: 'center',
+  },
+  retryButton: {
+    alignItems: 'center',
+    backgroundColor: '#1e4f8f',
+    borderRadius: 8,
+    justifyContent: 'center',
+    marginTop: 16,
+    minHeight: 44,
+    paddingHorizontal: 18,
+  },
+  retryButtonText: {
+    color: '#ffffff',
+    fontSize: 14,
+    fontWeight: '800',
   },
 });
