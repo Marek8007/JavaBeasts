@@ -5,23 +5,31 @@ import { ActivityIndicator, Pressable, StyleSheet, Text, View } from 'react-nati
 type TeamListRowProps = {
   activating?: boolean;
   disabled?: boolean;
-  onPress?: () => void;
+  onActivate?: () => void;
   team: TeamResponse;
 };
 
-export function TeamListRow({ activating = false, disabled = false, onPress, team }: TeamListRowProps) {
+export function TeamListRow({ activating = false, disabled = false, onActivate, team }: TeamListRowProps) {
   return (
-    <Pressable
-      disabled={disabled}
-      onPress={onPress}
-      style={({ pressed }) => [styles.row, pressed && styles.pressed, disabled && styles.disabled]}>
-      <View style={[styles.avatar, team.active && styles.avatarActive]}>
-        <Ionicons
-          name={team.active ? 'star' : 'paw-outline'}
-          size={22}
-          color={team.active ? '#ffffff' : '#1e4f8f'}
-        />
-      </View>
+    <View style={[styles.row, disabled && styles.disabled]}>
+      <Pressable
+        disabled={disabled || team.active}
+        onPress={onActivate}
+        style={({ pressed }) => [
+          styles.avatar,
+          team.active && styles.avatarActive,
+          pressed && styles.pressed,
+        ]}>
+        {activating ? (
+          <ActivityIndicator color="#1e4f8f" />
+        ) : (
+          <Ionicons
+            name={team.active ? 'star' : 'paw-outline'}
+            size={22}
+            color={team.active ? '#ffffff' : '#1e4f8f'}
+          />
+        )}
+      </Pressable>
 
       <View style={styles.content}>
         <Text numberOfLines={1} style={styles.title}>
@@ -29,12 +37,8 @@ export function TeamListRow({ activating = false, disabled = false, onPress, tea
         </Text>
       </View>
 
-      {activating ? (
-        <ActivityIndicator color="#1e4f8f" />
-      ) : (
-        <Ionicons name="chevron-forward" size={18} color="#9aa5b5" />
-      )}
-    </Pressable>
+      <Ionicons name="chevron-forward" size={18} color="#9aa5b5" />
+    </View>
   );
 }
 

@@ -124,7 +124,7 @@ export default function TeamsScreen() {
               <TeamListRow
                 activating={activatingTeamId === item.teamId}
                 disabled={activatingTeamId !== null}
-                onPress={() => void activateTeam(item)}
+                onActivate={() => void activateTeam(item)}
                 team={item}
               />
             )}
