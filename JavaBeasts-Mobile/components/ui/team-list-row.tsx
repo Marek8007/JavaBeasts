@@ -1,14 +1,20 @@
 import { TeamResponse } from '@/interfaces/team.interface';
 import { Ionicons } from '@expo/vector-icons';
-import { Pressable, StyleSheet, Text, View } from 'react-native';
+import { ActivityIndicator, Pressable, StyleSheet, Text, View } from 'react-native';
 
 type TeamListRowProps = {
+  activating?: boolean;
+  disabled?: boolean;
+  onPress?: () => void;
   team: TeamResponse;
 };
 
-export function TeamListRow({ team }: TeamListRowProps) {
+export function TeamListRow({ activating = false, disabled = false, onPress, team }: TeamListRowProps) {
   return (
-    <Pressable style={({ pressed }) => [styles.row, pressed && styles.pressed]}>
+    <Pressable
+      disabled={disabled}
+      onPress={onPress}
+      style={({ pressed }) => [styles.row, pressed && styles.pressed, disabled && styles.disabled]}>
       <View style={[styles.avatar, team.active && styles.avatarActive]}>
         <Ionicons
           name={team.active ? 'star' : 'paw-outline'}
@@ -23,7 +29,11 @@ export function TeamListRow({ team }: TeamListRowProps) {
         </Text>
       </View>
 
-      <Ionicons name="chevron-forward" size={18} color="#9aa5b5" />
+      {activating ? (
+        <ActivityIndicator color="#1e4f8f" />
+      ) : (
+        <Ionicons name="chevron-forward" size={18} color="#9aa5b5" />
+      )}
     </Pressable>
   );
 }
@@ -41,6 +51,9 @@ const styles = StyleSheet.create({
   },
   pressed: {
     opacity: 0.75,
+  },
+  disabled: {
+    opacity: 0.65,
   },
   avatar: {
     alignItems: 'center',

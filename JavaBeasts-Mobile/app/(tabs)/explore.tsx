@@ -1,4 +1,4 @@
-import { getTeamsByUserAction } from '@/actions/team.actions';
+import { activateTeamAction, getTeamsByUserAction } from '@/actions/team.actions';
 import { TeamListRow } from '@/components/ui/team-list-row';
 import { TeamResponse } from '@/interfaces/team.interface';
 import { useAuthStore } from '@/stores/authStore';
@@ -20,6 +20,7 @@ export default function TeamsScreen() {
   const [teams, setTeams] = useState<TeamResponse[]>([]);
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
+  const [activatingTeamId, setActivatingTeamId] = useState<number | null>(null);
   const [error, setError] = useState('');
 
   const loadTeams = useCallback(async () => {
@@ -54,6 +55,29 @@ export default function TeamsScreen() {
   function refreshTeams() {
     setRefreshing(true);
     void loadTeams();
+  }
+
+  async function activateTeam(team: TeamResponse) {
+    if (!user || team.active || activatingTeamId !== null) {
+      return;
+    }
+
+    setActivatingTeamId(team.teamId);
+    setError('');
+
+    try {
+      await activateTeamAction(user.userId, team.teamId);
+      await loadTeams();
+    } catch (requestError: any) {
+      const message =
+        requestError?.response?.data?.message ??
+        requestError?.response?.data?.detail ??
+        requestError?.message ??
+        'No se pudo activar el equipo';
+      setError(String(message));
+    } finally {
+      setActivatingTeamId(null);
+    }
   }
 
   const activeTeam = teams.find((team) => team.active);
@@ -96,7 +120,14 @@ export default function TeamsScreen() {
             refreshControl={
               <RefreshControl refreshing={refreshing} tintColor="#1e4f8f" onRefresh={refreshTeams} />
             }
-            renderItem={({ item }) => <TeamListRow team={item} />}
+            renderItem={({ item }) => (
+              <TeamListRow
+                activating={activatingTeamId === item.teamId}
+                disabled={activatingTeamId !== null}
+                onPress={() => void activateTeam(item)}
+                team={item}
+              />
+            )}
             ListEmptyComponent={
               <View style={styles.centerState}>
                 <Ionicons name="albums-outline" size={30} color="#68758a" />
