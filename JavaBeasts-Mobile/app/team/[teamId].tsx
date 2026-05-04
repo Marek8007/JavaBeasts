@@ -657,11 +657,12 @@ function MovePicker({
         {moves.map((move) => {
           const selected = move.moveId === selectedMoveId;
           const unavailable = move.moveId === unavailableMoveId;
+          const typeStyle = TYPE_STYLES[move.typeName] ?? DEFAULT_TYPE_STYLE;
 
           return (
             <Pressable
               className={`rounded-lg border px-3 py-2 active:opacity-80 ${
-                selected ? 'border-beasts-blue bg-[#e8edf5]' : 'border-beasts-line bg-white'
+                selected ? `border-beasts-blue ${typeStyle.row}` : `${typeStyle.border} ${typeStyle.row}`
               } ${unavailable ? 'opacity-45' : ''}`}
               disabled={unavailable}
               key={move.moveId}
@@ -670,7 +671,9 @@ function MovePicker({
                 <Text className="flex-1 text-sm font-extrabold text-beasts-ink" numberOfLines={1}>
                   {move.name}
                 </Text>
-                <Text className="text-xs font-bold text-beasts-muted">{move.typeName}</Text>
+                <View className={`rounded-full px-2 py-1 ${typeStyle.badge}`}>
+                  <Text className={`text-xs font-extrabold ${typeStyle.text}`}>{move.typeName}</Text>
+                </View>
               </View>
               <Text className="mt-1 text-xs text-beasts-muted">
                 Dano {move.damage} · Precision {move.accuracy}
