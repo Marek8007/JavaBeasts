@@ -66,6 +66,7 @@ CREATE TABLE Teams (
     Team_Id INT AUTO_INCREMENT PRIMARY KEY,
     User_Id INT NOT NULL,
     Name VARCHAR(50) NOT NULL,
+    Icon_Name VARCHAR(60) NOT NULL DEFAULT 'paw-outline',
     Is_Active BOOLEAN NOT NULL DEFAULT FALSE,
     CONSTRAINT fk_teams_user
         FOREIGN KEY (User_Id) REFERENCES Users(User_Id)
