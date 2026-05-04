@@ -1,9 +1,14 @@
-import { getJaBeasCatalogAction } from '@/actions/jabea.actions';
+import { getJaBeaAvailableMovesAction, getJaBeasCatalogAction } from '@/actions/jabea.actions';
 import {
   deleteTeamSlotAction,
   getTeamCompositionAction,
+  upsertTeamSlotAction,
 } from '@/actions/team-composition.actions';
-import { JaBeaCatalogResponse } from '@/interfaces/jabea.interface';
+import {
+  JaBeaAvailableMovesResponse,
+  JaBeaCatalogResponse,
+  JaBeaMoveResponse,
+} from '@/interfaces/jabea.interface';
 import { TeamCompositionResponse, TeamSlotResponse } from '@/interfaces/team-composition.interface';
 import { useAuthStore } from '@/stores/authStore';
 import { Ionicons } from '@expo/vector-icons';
@@ -17,6 +22,7 @@ import {
   Pressable,
   RefreshControl,
   SafeAreaView,
+  ScrollView,
   Text,
   View,
 } from 'react-native';
@@ -82,7 +88,13 @@ export default function TeamCompositionScreen() {
   const [jabeas, setJabeas] = useState<JaBeaCatalogResponse[]>([]);
   const [jabeasLoading, setJabeasLoading] = useState(false);
   const [jabeasError, setJabeasError] = useState('');
-  const [expandedJaBeaId, setExpandedJaBeaId] = useState<number | null>(null);
+  const [selectedJaBea, setSelectedJaBea] = useState<JaBeaCatalogResponse | null>(null);
+  const [availableMoves, setAvailableMoves] = useState<JaBeaAvailableMovesResponse | null>(null);
+  const [movesLoading, setMovesLoading] = useState(false);
+  const [move1Id, setMove1Id] = useState<number | null>(null);
+  const [move2Id, setMove2Id] = useState<number | null>(null);
+  const [savingSlot, setSavingSlot] = useState(false);
+  const [slotError, setSlotError] = useState('');
   const [error, setError] = useState('');
 
   const loadComposition = useCallback(async () => {
@@ -150,8 +162,8 @@ export default function TeamCompositionScreen() {
 
   async function openJaBeaPicker(slot: number) {
     setSelectedSlot(slot);
-    setExpandedJaBeaId(null);
     setJabeasError('');
+    resetSlotSelection();
 
     if (jabeas.length > 0) {
       return;
@@ -176,8 +188,81 @@ export default function TeamCompositionScreen() {
 
   function closeJaBeaPicker() {
     setSelectedSlot(null);
-    setExpandedJaBeaId(null);
     setJabeasError('');
+    resetSlotSelection();
+  }
+
+  function resetSlotSelection() {
+    setSelectedJaBea(null);
+    setAvailableMoves(null);
+    setMovesLoading(false);
+    setMove1Id(null);
+    setMove2Id(null);
+    setSavingSlot(false);
+    setSlotError('');
+  }
+
+  async function selectJaBea(jaBea: JaBeaCatalogResponse) {
+    setSelectedJaBea(jaBea);
+    setSlotError('');
+    setMove1Id(null);
+    setMove2Id(null);
+    setMovesLoading(true);
+
+    try {
+      const data = await getJaBeaAvailableMovesAction(jaBea.jaBeasId);
+      setAvailableMoves(data);
+    } catch (requestError: any) {
+      const message =
+        requestError?.response?.data?.message ??
+        requestError?.response?.data?.detail ??
+        requestError?.message ??
+        'No se pudieron cargar los movimientos';
+      setSlotError(String(message));
+    } finally {
+      setMovesLoading(false);
+    }
+  }
+
+  async function saveSelectedSlot() {
+    if (!user || selectedSlot === null || !selectedJaBea || savingSlot || !Number.isFinite(teamId)) {
+      return;
+    }
+
+    if (!move1Id || !move2Id) {
+      setSlotError('Elige los dos movimientos configurables.');
+      return;
+    }
+
+    if (move1Id === move2Id) {
+      setSlotError('Los dos movimientos deben ser distintos.');
+      return;
+    }
+
+    setSavingSlot(true);
+    setSlotError('');
+
+    try {
+      const data = await upsertTeamSlotAction(
+        user.userId,
+        teamId,
+        selectedSlot,
+        selectedJaBea.jaBeasId,
+        move1Id,
+        move2Id
+      );
+      setComposition(data);
+      closeJaBeaPicker();
+    } catch (requestError: any) {
+      const message =
+        requestError?.response?.data?.message ??
+        requestError?.response?.data?.detail ??
+        requestError?.message ??
+        'No se pudo guardar el slot';
+      setSlotError(String(message));
+    } finally {
+      setSavingSlot(false);
+    }
   }
 
   const teamName = composition?.name ?? fallbackTeamName;
@@ -250,11 +335,15 @@ export default function TeamCompositionScreen() {
           visible={selectedSlot !== null}
           onRequestClose={closeJaBeaPicker}>
           <View className="flex-1 justify-end bg-[rgba(23,32,51,0.45)]">
-            <View className="max-h-[86%] rounded-t-lg bg-white px-[18px] pb-5 pt-4">
+            <View className="h-[92%] rounded-t-lg bg-white px-[18px] pb-5 pt-4">
               <View className="mb-4 flex-row items-center justify-between gap-4">
                 <View className="flex-1">
-                  <Text className="text-xl font-extrabold text-beasts-ink">Anadir JaBea</Text>
-                  <Text className="mt-1 text-sm text-beasts-muted">Slot {selectedSlot}</Text>
+                  <Text className="text-xl font-extrabold text-beasts-ink">
+                    {selectedJaBea ? 'Configurar JaBea' : 'Anadir JaBea'}
+                  </Text>
+                  <Text className="mt-1 text-sm text-beasts-muted">
+                    {selectedJaBea ? selectedJaBea.name : `Slot ${selectedSlot}`}
+                  </Text>
                 </View>
                 <Pressable
                   className="h-10 w-10 items-center justify-center rounded-lg bg-[#e8edf5] active:opacity-80"
@@ -281,23 +370,38 @@ export default function TeamCompositionScreen() {
                   </Pressable>
                 </View>
               ) : (
-                <FlatList
-                  contentContainerClassName="gap-3 pb-2"
-                  data={jabeas}
-                  extraData={expandedJaBeaId}
-                  keyExtractor={(item) => String(item.jaBeasId)}
-                  renderItem={({ item }) => (
-                    <JaBeaPickerRow
-                      expanded={expandedJaBeaId === item.jaBeasId}
-                      jaBea={item}
-                      onPress={() =>
-                        setExpandedJaBeaId((current) =>
-                          current === item.jaBeasId ? null : item.jaBeasId
-                        )
-                      }
+                <View className="flex-1">
+                  {selectedJaBea ? (
+                    <SlotMoveEditor
+                      availableMoves={availableMoves?.configurableMoves ?? []}
+                      loading={movesLoading}
+                      move1Id={move1Id}
+                      move2Id={move2Id}
+                      onBack={resetSlotSelection}
+                      onMove1Change={(moveId) => {
+                        setMove1Id(moveId);
+                        setSlotError('');
+                      }}
+                      onMove2Change={(moveId) => {
+                        setMove2Id(moveId);
+                        setSlotError('');
+                      }}
+                      onSave={() => void saveSelectedSlot()}
+                      saving={savingSlot}
+                      selectedJaBea={selectedJaBea}
+                      slotError={slotError}
+                    />
+                  ) : (
+                    <FlatList
+                      contentContainerClassName="gap-3 pb-2"
+                      data={jabeas}
+                      keyExtractor={(item) => String(item.jaBeasId)}
+                      renderItem={({ item }) => (
+                        <JaBeaPickerRow jaBea={item} onPress={() => void selectJaBea(item)} />
+                      )}
                     />
                   )}
-                />
+                </View>
               )}
             </View>
           </View>
@@ -373,11 +477,9 @@ function TeamSlotCard({
 }
 
 function JaBeaPickerRow({
-  expanded,
   jaBea,
   onPress,
 }: {
-  expanded: boolean;
   jaBea: JaBeaCatalogResponse;
   onPress: () => void;
 }) {
@@ -399,34 +501,184 @@ function JaBeaPickerRow({
           </Text>
         </View>
 
-        <Ionicons name={expanded ? 'chevron-up' : 'chevron-down'} size={20} color="#68758a" />
+        <Ionicons name="chevron-forward" size={20} color="#68758a" />
+      </Pressable>
+    </View>
+  );
+}
+
+function SlotMoveEditor({
+  availableMoves,
+  loading,
+  move1Id,
+  move2Id,
+  onBack,
+  onMove1Change,
+  onMove2Change,
+  onSave,
+  saving,
+  selectedJaBea,
+  slotError,
+}: {
+  availableMoves: JaBeaMoveResponse[];
+  loading: boolean;
+  move1Id: number | null;
+  move2Id: number | null;
+  onBack: () => void;
+  onMove1Change: (moveId: number) => void;
+  onMove2Change: (moveId: number) => void;
+  onSave: () => void;
+  saving: boolean;
+  selectedJaBea: JaBeaCatalogResponse;
+  slotError: string;
+}) {
+  const typeStyle = TYPE_STYLES[selectedJaBea.typeName] ?? DEFAULT_TYPE_STYLE;
+
+  return (
+    <View className="flex-1 gap-3">
+      <Pressable className="self-start flex-row items-center gap-1.5 py-1 active:opacity-75" onPress={onBack}>
+        <Ionicons name="chevron-back" size={18} color="#1e4f8f" />
+        <Text className="text-sm font-extrabold text-beasts-blue">Cambiar JaBea</Text>
       </Pressable>
 
-      {expanded ? (
-        <View className="border-t border-white/70 px-4 pb-4 pt-3">
-          <Text className="text-sm leading-5 text-[#42506a]">{jaBea.description}</Text>
-
-          <View className="mt-3 flex-row gap-2">
-            <StatBox label="Vida" value={jaBea.health} />
-            <StatBox label="Dano" value={jaBea.damage} />
-            <StatBox label="Def." value={jaBea.defence} />
-            <StatBox label="Vel." value={jaBea.speed} />
+      <View className={`rounded-lg border ${typeStyle.border} ${typeStyle.row} p-4`}>
+        <View className="flex-row items-center justify-between gap-3">
+          <View className="flex-1">
+            <Text className="text-xl font-extrabold text-beasts-ink" numberOfLines={1}>
+              {selectedJaBea.name}
+            </Text>
+            <Text className="mt-1 text-sm leading-5 text-[#42506a]">{selectedJaBea.description}</Text>
           </View>
-
-          {jaBea.uniqueMove ? (
-            <View className="mt-3 rounded-lg bg-white px-3 py-3">
-              <Text className="text-xs font-extrabold uppercase text-beasts-muted">Movimiento unico</Text>
-              <Text className="mt-1 text-sm font-extrabold text-beasts-ink">{jaBea.uniqueMove.name}</Text>
-              <Text className="mt-1 text-xs leading-4 text-beasts-muted">
-                Dano {jaBea.uniqueMove.damage} · Precision {jaBea.uniqueMove.accuracy}
-              </Text>
-              {jaBea.uniqueMove.description ? (
-                <Text className="mt-2 text-xs leading-4 text-[#42506a]">{jaBea.uniqueMove.description}</Text>
-              ) : null}
-            </View>
-          ) : null}
+          <View className={`rounded-lg px-3 py-2 ${typeStyle.badge}`}>
+            <Text className={`text-xs font-extrabold uppercase ${typeStyle.text}`}>
+              {selectedJaBea.typeName}
+            </Text>
+          </View>
         </View>
-      ) : null}
+
+        <View className="mt-3 flex-row gap-2">
+          <StatBox label="Vida" value={selectedJaBea.health} />
+          <StatBox label="Dano" value={selectedJaBea.damage} />
+          <StatBox label="Def." value={selectedJaBea.defence} />
+          <StatBox label="Vel." value={selectedJaBea.speed} />
+        </View>
+
+        {selectedJaBea.uniqueMove ? (
+          <View className="mt-3 rounded-lg bg-white px-3 py-3">
+            <Text className="text-xs font-extrabold uppercase text-beasts-muted">Movimiento unico</Text>
+            <Text className="mt-1 text-sm font-extrabold text-beasts-ink">
+              {selectedJaBea.uniqueMove.name}
+            </Text>
+            <Text className="mt-1 text-xs leading-4 text-beasts-muted">
+              Dano {selectedJaBea.uniqueMove.damage} · Precision {selectedJaBea.uniqueMove.accuracy}
+            </Text>
+            {selectedJaBea.uniqueMove.description ? (
+              <Text className="mt-2 text-xs leading-4 text-[#42506a]">
+                {selectedJaBea.uniqueMove.description}
+              </Text>
+            ) : null}
+          </View>
+        ) : null}
+      </View>
+
+      <View className="flex-1 rounded-lg border border-beasts-line bg-[#f8fafc] p-3">
+        <Text className="text-sm font-extrabold text-beasts-ink">Elige sus movimientos</Text>
+
+        {loading ? (
+          <View className="min-h-[120px] items-center justify-center">
+            <ActivityIndicator color="#1e4f8f" />
+            <Text className="mt-2 text-sm text-beasts-muted">Cargando movimientos...</Text>
+          </View>
+        ) : (
+          <View className="mt-3 flex-1 gap-3">
+            <View className="flex-1 flex-row gap-3">
+              <MovePicker
+                moves={availableMoves}
+                selectedMoveId={move1Id}
+                title="Movimiento 1"
+                unavailableMoveId={move2Id}
+                onSelect={onMove1Change}
+              />
+              <MovePicker
+                moves={availableMoves}
+                selectedMoveId={move2Id}
+                title="Movimiento 2"
+                unavailableMoveId={move1Id}
+                onSelect={onMove2Change}
+              />
+            </View>
+
+            {slotError ? (
+              <View className="rounded-lg border border-[#f7d6bf] bg-[#fff4ed] px-3 py-2">
+                <Text className="text-sm font-semibold leading-5 text-beasts-warning">{slotError}</Text>
+              </View>
+            ) : null}
+
+            <Pressable
+              className={`min-h-11 items-center justify-center rounded-lg bg-beasts-blue px-4 active:opacity-80 ${
+                saving ? 'opacity-65' : ''
+              }`}
+              disabled={saving}
+              onPress={onSave}>
+              {saving ? (
+                <ActivityIndicator color="#ffffff" />
+              ) : (
+                <Text className="text-sm font-extrabold text-white">Guardar slot</Text>
+              )}
+            </Pressable>
+          </View>
+        )}
+      </View>
+    </View>
+  );
+}
+
+function MovePicker({
+  moves,
+  onSelect,
+  selectedMoveId,
+  title,
+  unavailableMoveId,
+}: {
+  moves: JaBeaMoveResponse[];
+  onSelect: (moveId: number) => void;
+  selectedMoveId: number | null;
+  title: string;
+  unavailableMoveId: number | null;
+}) {
+  return (
+    <View className="flex-1">
+      <Text className="mb-2 text-xs font-extrabold uppercase text-beasts-muted">{title}</Text>
+      <ScrollView
+        className="max-h-[172px]"
+        contentContainerClassName="gap-2"
+        nestedScrollEnabled
+        showsVerticalScrollIndicator>
+        {moves.map((move) => {
+          const selected = move.moveId === selectedMoveId;
+          const unavailable = move.moveId === unavailableMoveId;
+
+          return (
+            <Pressable
+              className={`rounded-lg border px-3 py-2 active:opacity-80 ${
+                selected ? 'border-beasts-blue bg-[#e8edf5]' : 'border-beasts-line bg-white'
+              } ${unavailable ? 'opacity-45' : ''}`}
+              disabled={unavailable}
+              key={move.moveId}
+              onPress={() => onSelect(move.moveId)}>
+              <View className="flex-row items-center justify-between gap-3">
+                <Text className="flex-1 text-sm font-extrabold text-beasts-ink" numberOfLines={1}>
+                  {move.name}
+                </Text>
+                <Text className="text-xs font-bold text-beasts-muted">{move.typeName}</Text>
+              </View>
+              <Text className="mt-1 text-xs text-beasts-muted">
+                Dano {move.damage} · Precision {move.accuracy}
+              </Text>
+            </Pressable>
+          );
+        })}
+      </ScrollView>
     </View>
   );
 }

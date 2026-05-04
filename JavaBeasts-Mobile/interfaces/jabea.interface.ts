@@ -21,3 +21,12 @@ export interface JaBeaCatalogResponse {
   typeName: string;
   uniqueMove?: JaBeaMoveResponse | null;
 }
+
+export interface JaBeaAvailableMovesResponse {
+  jaBeasId: number;
+  name: string;
+  typeId: number;
+  typeName: string;
+  uniqueMove?: JaBeaMoveResponse | null;
+  configurableMoves: JaBeaMoveResponse[];
+}

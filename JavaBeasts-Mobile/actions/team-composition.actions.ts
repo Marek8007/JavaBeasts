@@ -22,3 +22,22 @@ export const deleteTeamSlotAction = async (
   );
   return data;
 };
+
+export const upsertTeamSlotAction = async (
+  userId: number,
+  teamId: number,
+  slot: number,
+  jaBeasId: number,
+  move1Id: number,
+  move2Id: number
+): Promise<TeamCompositionResponse> => {
+  const { data } = await javabeastsApi.put<TeamCompositionResponse>(
+    `/teams/${teamId}/slots/${slot}?userId=${userId}`,
+    {
+      jaBeasId,
+      move1Id,
+      move2Id,
+    }
+  );
+  return data;
+};
