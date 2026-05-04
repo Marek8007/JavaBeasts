@@ -8,7 +8,7 @@ import { TeamListRow } from '@/components/ui/team-list-row';
 import { TeamResponse } from '@/interfaces/team.interface';
 import { useAuthStore } from '@/stores/authStore';
 import { Ionicons } from '@expo/vector-icons';
-import { useCallback, useEffect, useState } from 'react';
+import { ComponentProps, useCallback, useEffect, useState } from 'react';
 import {
   ActivityIndicator,
   FlatList,
@@ -21,6 +21,13 @@ import {
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
+type IoniconName = ComponentProps<typeof Ionicons>['name'];
+
+const DEFAULT_TEAM_ICON: IoniconName = 'paw-outline';
+const TEAM_ICON_NAMES = Object.keys(
+  (Ionicons as unknown as { glyphMap: Record<string, number> }).glyphMap
+).sort() as IoniconName[];
+
 export default function TeamsScreen() {
   const user = useAuthStore((state) => state.user);
   const [teams, setTeams] = useState<TeamResponse[]>([]);
@@ -30,6 +37,7 @@ export default function TeamsScreen() {
   const [savingTeam, setSavingTeam] = useState(false);
   const [editingTeam, setEditingTeam] = useState<TeamResponse | null>(null);
   const [teamName, setTeamName] = useState('');
+  const [selectedIconName, setSelectedIconName] = useState<IoniconName>(DEFAULT_TEAM_ICON);
   const [modalVisible, setModalVisible] = useState(false);
   const [error, setError] = useState('');
 
@@ -93,12 +101,14 @@ export default function TeamsScreen() {
   function openCreateModal() {
     setEditingTeam(null);
     setTeamName('');
+    setSelectedIconName(DEFAULT_TEAM_ICON);
     setModalVisible(true);
   }
 
   function openRenameModal(team: TeamResponse) {
     setEditingTeam(team);
     setTeamName(team.name);
+    setSelectedIconName((team.iconName || DEFAULT_TEAM_ICON) as IoniconName);
     setModalVisible(true);
   }
 
@@ -110,6 +120,7 @@ export default function TeamsScreen() {
     setModalVisible(false);
     setEditingTeam(null);
     setTeamName('');
+    setSelectedIconName(DEFAULT_TEAM_ICON);
   }
 
   async function saveTeam() {
@@ -129,14 +140,15 @@ export default function TeamsScreen() {
 
     try {
       if (editingTeam) {
-        await renameTeamAction(user.userId, editingTeam.teamId, trimmedName);
+        await renameTeamAction(user.userId, editingTeam.teamId, trimmedName, selectedIconName);
       } else {
-        await createTeamAction(user.userId, trimmedName);
+        await createTeamAction(user.userId, trimmedName, selectedIconName);
       }
 
       setModalVisible(false);
       setEditingTeam(null);
       setTeamName('');
+      setSelectedIconName(DEFAULT_TEAM_ICON);
       await loadTeams();
     } catch (requestError: any) {
       const message =
@@ -230,11 +242,19 @@ export default function TeamsScreen() {
         )}
 
         <Modal animationType="fade" transparent visible={modalVisible} onRequestClose={closeModal}>
-          <View className="flex-1 items-center justify-center bg-[rgba(23,32,51,0.45)] px-6">
-            <View className="w-full gap-4 rounded-lg bg-white p-[18px]">
-              <Text className="text-xl font-extrabold text-beasts-ink">
-                {editingTeam ? 'Renombrar equipo' : 'Crear equipo'}
-              </Text>
+          <View className="flex-1 items-center justify-center bg-[rgba(23,32,51,0.45)] px-5">
+            <View className="max-h-[88%] w-full gap-4 rounded-lg bg-white p-[18px]">
+              <View className="flex-row items-center justify-between gap-4">
+                <View className="flex-1">
+                  <Text className="text-xl font-extrabold text-beasts-ink">
+                    {editingTeam ? 'Renombrar equipo' : 'Crear equipo'}
+                  </Text>
+                </View>
+                <View className="h-12 w-12 items-center justify-center rounded-lg bg-beasts-blue">
+                  <Ionicons name={selectedIconName} size={24} color="#ffffff" />
+                </View>
+              </View>
+
               <TextInput
                 autoCapitalize="sentences"
                 autoFocus
@@ -244,6 +264,30 @@ export default function TeamsScreen() {
                 placeholder="Nombre del equipo"
                 placeholderTextColor="#8a93a3"
                 value={teamName}
+              />
+
+              <FlatList
+                className="max-h-[260px] rounded-lg border border-beasts-line bg-[#f8fafc]"
+                columnWrapperClassName="gap-2"
+                contentContainerClassName="gap-2 p-2"
+                data={TEAM_ICON_NAMES}
+                extraData={selectedIconName}
+                keyExtractor={(iconName) => iconName}
+                keyboardShouldPersistTaps="handled"
+                numColumns={5}
+                renderItem={({ item }) => {
+                  const selected = item === selectedIconName;
+
+                  return (
+                    <Pressable
+                      className={`h-11 flex-1 items-center justify-center rounded-lg active:opacity-80 ${
+                        selected ? 'bg-beasts-blue' : 'bg-white'
+                      }`}
+                      onPress={() => setSelectedIconName(item)}>
+                      <Ionicons name={item} size={22} color={selected ? '#ffffff' : '#1e4f8f'} />
+                    </Pressable>
+                  );
+                }}
               />
 
               <View className="flex-row justify-end gap-2.5">
