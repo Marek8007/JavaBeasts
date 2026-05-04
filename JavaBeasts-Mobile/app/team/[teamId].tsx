@@ -89,6 +89,7 @@ export default function TeamCompositionScreen() {
   const [jabeasLoading, setJabeasLoading] = useState(false);
   const [jabeasError, setJabeasError] = useState('');
   const [selectedJaBea, setSelectedJaBea] = useState<JaBeaCatalogResponse | null>(null);
+  const [editingSavedSlot, setEditingSavedSlot] = useState(false);
   const [availableMoves, setAvailableMoves] = useState<JaBeaAvailableMovesResponse | null>(null);
   const [movesLoading, setMovesLoading] = useState(false);
   const [move1Id, setMove1Id] = useState<number | null>(null);
@@ -160,13 +161,9 @@ export default function TeamCompositionScreen() {
     ]);
   }
 
-  async function openJaBeaPicker(slot: number) {
-    setSelectedSlot(slot);
-    setJabeasError('');
-    resetSlotSelection();
-
+  async function loadJaBeasCatalog() {
     if (jabeas.length > 0) {
-      return;
+      return jabeas;
     }
 
     setJabeasLoading(true);
@@ -174,6 +171,7 @@ export default function TeamCompositionScreen() {
     try {
       const data = await getJaBeasCatalogAction();
       setJabeas(data);
+      return data;
     } catch (requestError: any) {
       const message =
         requestError?.response?.data?.message ??
@@ -181,9 +179,38 @@ export default function TeamCompositionScreen() {
         requestError?.message ??
         'No se pudieron cargar los JaBeas';
       setJabeasError(String(message));
+      return [];
     } finally {
       setJabeasLoading(false);
     }
+  }
+
+  async function openJaBeaPicker(slot: number) {
+    setSelectedSlot(slot);
+    setJabeasError('');
+    resetSlotSelection();
+    await loadJaBeasCatalog();
+  }
+
+  async function openMoveEditor(slot: TeamSlotResponse) {
+    if (!slot.member) {
+      return;
+    }
+
+    setSelectedSlot(slot.slot);
+    setJabeasError('');
+    resetSlotSelection();
+    setEditingSavedSlot(true);
+
+    const catalog = await loadJaBeasCatalog();
+    const catalogJaBea = catalog.find((jaBea) => jaBea.jaBeasId === slot.member?.jaBeasId);
+
+    if (!catalogJaBea) {
+      setSlotError('No se pudo encontrar este JaBea en el catalogo.');
+      return;
+    }
+
+    await selectJaBea(catalogJaBea, slot.member.move1.moveId, slot.member.move2.moveId);
   }
 
   function closeJaBeaPicker() {
@@ -200,13 +227,14 @@ export default function TeamCompositionScreen() {
     setMove2Id(null);
     setSavingSlot(false);
     setSlotError('');
+    setEditingSavedSlot(false);
   }
 
-  async function selectJaBea(jaBea: JaBeaCatalogResponse) {
+  async function selectJaBea(jaBea: JaBeaCatalogResponse, initialMove1Id?: number, initialMove2Id?: number) {
     setSelectedJaBea(jaBea);
     setSlotError('');
-    setMove1Id(null);
-    setMove2Id(null);
+    setMove1Id(initialMove1Id ?? null);
+    setMove2Id(initialMove2Id ?? null);
     setMovesLoading(true);
 
     try {
@@ -323,6 +351,7 @@ export default function TeamCompositionScreen() {
                 deleting={deletingSlot === item.slot}
                 onAdd={() => void openJaBeaPicker(item.slot)}
                 onDelete={() => confirmDeleteSlot(item.slot)}
+                onEdit={() => void openMoveEditor(item)}
                 slot={item}
               />
             )}
@@ -339,7 +368,7 @@ export default function TeamCompositionScreen() {
               <View className="mb-4 flex-row items-center justify-between gap-4">
                 <View className="flex-1">
                   <Text className="text-xl font-extrabold text-beasts-ink">
-                    {selectedJaBea ? 'Configurar JaBea' : 'Anadir JaBea'}
+                    {editingSavedSlot ? 'Editar ataques' : selectedJaBea ? 'Configurar JaBea' : 'Anadir JaBea'}
                   </Text>
                   <Text className="mt-1 text-sm text-beasts-muted">
                     {selectedJaBea ? selectedJaBea.name : `Slot ${selectedSlot}`}
@@ -377,7 +406,7 @@ export default function TeamCompositionScreen() {
                       loading={movesLoading}
                       move1Id={move1Id}
                       move2Id={move2Id}
-                      onBack={resetSlotSelection}
+                      onBack={editingSavedSlot ? undefined : resetSlotSelection}
                       onMove1Change={(moveId) => {
                         setMove1Id(moveId);
                         setSlotError('');
@@ -415,11 +444,13 @@ function TeamSlotCard({
   deleting,
   onAdd,
   onDelete,
+  onEdit,
   slot,
 }: {
   deleting: boolean;
   onAdd: () => void;
   onDelete: () => void;
+  onEdit: () => void;
   slot: TeamSlotResponse;
 }) {
   const member = slot.member;
@@ -455,16 +486,21 @@ function TeamSlotCard({
           </Text>
           <Text className="mt-1 text-sm text-beasts-muted">{member.typeName}</Text>
         </View>
-        <Pressable
-          className="h-10 w-10 items-center justify-center active:opacity-75"
-          disabled={deleting}
-          onPress={onDelete}>
-          {deleting ? (
-            <ActivityIndicator color="#b54708" />
-          ) : (
-            <Ionicons name="trash-outline" size={20} color="#b54708" />
-          )}
-        </Pressable>
+        <View className="flex-row items-center gap-1">
+          <Pressable className="h-10 w-10 items-center justify-center active:opacity-75" onPress={onEdit}>
+            <Ionicons name="create-outline" size={20} color="#1e4f8f" />
+          </Pressable>
+          <Pressable
+            className="h-10 w-10 items-center justify-center active:opacity-75"
+            disabled={deleting}
+            onPress={onDelete}>
+            {deleting ? (
+              <ActivityIndicator color="#b54708" />
+            ) : (
+              <Ionicons name="trash-outline" size={20} color="#b54708" />
+            )}
+          </Pressable>
+        </View>
       </View>
 
       <View className="mt-3 gap-2">
@@ -524,7 +560,7 @@ function SlotMoveEditor({
   loading: boolean;
   move1Id: number | null;
   move2Id: number | null;
-  onBack: () => void;
+  onBack?: () => void;
   onMove1Change: (moveId: number) => void;
   onMove2Change: (moveId: number) => void;
   onSave: () => void;
@@ -536,10 +572,12 @@ function SlotMoveEditor({
 
   return (
     <View className="flex-1 gap-3">
-      <Pressable className="self-start flex-row items-center gap-1.5 py-1 active:opacity-75" onPress={onBack}>
-        <Ionicons name="chevron-back" size={18} color="#1e4f8f" />
-        <Text className="text-sm font-extrabold text-beasts-blue">Cambiar JaBea</Text>
-      </Pressable>
+      {onBack ? (
+        <Pressable className="self-start flex-row items-center gap-1.5 py-1 active:opacity-75" onPress={onBack}>
+          <Ionicons name="chevron-back" size={18} color="#1e4f8f" />
+          <Text className="text-sm font-extrabold text-beasts-blue">Cambiar JaBea</Text>
+        </Pressable>
+      ) : null}
 
       <View className={`rounded-lg border ${typeStyle.border} ${typeStyle.row} p-4`}>
         <View className="flex-row items-center justify-between gap-3">
