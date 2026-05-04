@@ -11,6 +11,7 @@ type TeamListRowProps = {
   activating?: boolean;
   disabled?: boolean;
   onActivate?: () => void;
+  onOpen?: () => void;
   onRename?: () => void;
   team: TeamResponse;
 };
@@ -19,6 +20,7 @@ export function TeamListRow({
   activating = false,
   disabled = false,
   onActivate,
+  onOpen,
   onRename,
   team,
 }: TeamListRowProps) {
@@ -42,11 +44,11 @@ export function TeamListRow({
         )}
       </Pressable>
 
-      <View className="flex-1 justify-center">
+      <Pressable className="flex-1 justify-center self-stretch" disabled={disabled} onPress={onOpen}>
         <Text className="text-base font-extrabold text-beasts-ink" numberOfLines={1}>
           {team.name}
         </Text>
-      </View>
+      </Pressable>
 
       <Pressable
         className="ml-2 h-10 w-10 items-center justify-center active:opacity-75"

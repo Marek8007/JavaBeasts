@@ -8,6 +8,7 @@ import { TeamListRow } from '@/components/ui/team-list-row';
 import { TeamResponse } from '@/interfaces/team.interface';
 import { useAuthStore } from '@/stores/authStore';
 import { Ionicons } from '@expo/vector-icons';
+import { router } from 'expo-router';
 import { ComponentProps, useCallback, useEffect, useState } from 'react';
 import {
   ActivityIndicator,
@@ -228,6 +229,16 @@ export default function TeamsScreen() {
                 activating={activatingTeamId === item.teamId}
                 disabled={activatingTeamId !== null}
                 onActivate={() => void activateTeam(item)}
+                onOpen={() =>
+                  router.push({
+                    pathname: '/team/[teamId]',
+                    params: {
+                      iconName: item.iconName,
+                      teamId: String(item.teamId),
+                      teamName: item.name,
+                    },
+                  })
+                }
                 onRename={() => openRenameModal(item)}
                 team={item}
               />
