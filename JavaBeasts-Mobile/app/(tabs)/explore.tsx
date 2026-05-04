@@ -39,6 +39,7 @@ export default function TeamsScreen() {
   const [teamName, setTeamName] = useState('');
   const [selectedIconName, setSelectedIconName] = useState<IoniconName>(DEFAULT_TEAM_ICON);
   const [modalVisible, setModalVisible] = useState(false);
+  const [modalError, setModalError] = useState('');
   const [error, setError] = useState('');
 
   const loadTeams = useCallback(async () => {
@@ -102,6 +103,7 @@ export default function TeamsScreen() {
     setEditingTeam(null);
     setTeamName('');
     setSelectedIconName(DEFAULT_TEAM_ICON);
+    setModalError('');
     setModalVisible(true);
   }
 
@@ -109,6 +111,7 @@ export default function TeamsScreen() {
     setEditingTeam(team);
     setTeamName(team.name);
     setSelectedIconName((team.iconName || DEFAULT_TEAM_ICON) as IoniconName);
+    setModalError('');
     setModalVisible(true);
   }
 
@@ -121,6 +124,7 @@ export default function TeamsScreen() {
     setEditingTeam(null);
     setTeamName('');
     setSelectedIconName(DEFAULT_TEAM_ICON);
+    setModalError('');
   }
 
   async function saveTeam() {
@@ -131,12 +135,12 @@ export default function TeamsScreen() {
     const trimmedName = teamName.trim();
 
     if (trimmedName.length < 3 || trimmedName.length > 50) {
-      setError('El nombre del equipo debe tener entre 3 y 50 caracteres.');
+      setModalError('El nombre del equipo debe tener entre 3 y 50 caracteres.');
       return;
     }
 
     setSavingTeam(true);
-    setError('');
+    setModalError('');
 
     try {
       if (editingTeam) {
@@ -149,6 +153,7 @@ export default function TeamsScreen() {
       setEditingTeam(null);
       setTeamName('');
       setSelectedIconName(DEFAULT_TEAM_ICON);
+      setModalError('');
       await loadTeams();
     } catch (requestError: any) {
       const message =
@@ -156,7 +161,7 @@ export default function TeamsScreen() {
         requestError?.response?.data?.detail ??
         requestError?.message ??
         'No se pudo guardar el equipo';
-      setError(String(message));
+      setModalError(String(message));
     } finally {
       setSavingTeam(false);
     }
@@ -260,11 +265,20 @@ export default function TeamsScreen() {
                 autoFocus
                 className="min-h-12 rounded-lg border border-beasts-line bg-[#f8fafc] px-3.5 text-base text-beasts-ink"
                 maxLength={50}
-                onChangeText={setTeamName}
+                onChangeText={(value) => {
+                  setTeamName(value);
+                  setModalError('');
+                }}
                 placeholder="Nombre del equipo"
                 placeholderTextColor="#8a93a3"
                 value={teamName}
               />
+
+              {modalError ? (
+                <View className="rounded-lg border border-[#f7d6bf] bg-[#fff4ed] px-3.5 py-3">
+                  <Text className="text-sm font-semibold leading-5 text-beasts-warning">{modalError}</Text>
+                </View>
+              ) : null}
 
               <FlatList
                 className="max-h-[260px] rounded-lg border border-beasts-line bg-[#f8fafc]"
