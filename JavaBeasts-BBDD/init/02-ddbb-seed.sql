@@ -158,11 +158,11 @@ ON DUPLICATE KEY UPDATE
 -- =========================
 -- 5. TEAMS
 -- =========================
-INSERT INTO Teams (User_Id, Name, Is_Active)
+INSERT INTO Teams (User_Id, Name, Icon_Name, Is_Active)
 VALUES
-    ((SELECT User_Id FROM Users WHERE Username = 'alba'), 'Equipo Alba 1', TRUE),
-    ((SELECT User_Id FROM Users WHERE Username = 'bruno'), 'Equipo Bruno 1', TRUE),
-    ((SELECT User_Id FROM Users WHERE Username = 'carla'), 'Equipo Carla 1', TRUE);
+    ((SELECT User_Id FROM Users WHERE Username = 'alba'), 'Equipo Alba 1', 'flame-outline', TRUE),
+    ((SELECT User_Id FROM Users WHERE Username = 'bruno'), 'Equipo Bruno 1', 'shield-outline', TRUE),
+    ((SELECT User_Id FROM Users WHERE Username = 'carla'), 'Equipo Carla 1', 'leaf-outline', TRUE);
 
 -- =========================
 -- 6. JABEAS_TEAMMED
