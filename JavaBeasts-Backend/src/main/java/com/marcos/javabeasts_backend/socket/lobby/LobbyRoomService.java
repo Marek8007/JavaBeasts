@@ -19,19 +19,28 @@ public class LobbyRoomService {
         return toPayload(room);
     }
 
-    public synchronized RoomStatusPayload joinRoom(String username) {
+    public synchronized RoomStatusPayload joinRoom(String roomCode, String username) {
+        validateRoomCode(roomCode);
         room.joinPlayer(username);
         return toPayload(room);
     }
 
-    public synchronized RoomStatusPayload leaveRoom(String username) {
+    public synchronized RoomStatusPayload leaveRoom(String roomCode, String username) {
+        validateRoomCode(roomCode);
         room.leavePlayer(username);
         return toPayload(room);
     }
 
-    public synchronized RoomStatusPayload setReady(String username, boolean ready) {
+    public synchronized RoomStatusPayload setReady(String roomCode, String username, boolean ready) {
+        validateRoomCode(roomCode);
         room.setReady(username, ready);
         return toPayload(room);
+    }
+
+    private void validateRoomCode(String roomCode) {
+        if (!room.getRoomCode().equals(roomCode)) {
+            throw new IllegalArgumentException("El codigo de sala no es valido");
+        }
     }
 
     private String generateRoomCode() {
