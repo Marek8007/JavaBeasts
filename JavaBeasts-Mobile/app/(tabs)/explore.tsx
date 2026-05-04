@@ -15,11 +15,11 @@ import {
   Modal,
   Pressable,
   RefreshControl,
-  SafeAreaView,
   Text,
   TextInput,
   View,
 } from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
 
 export default function TeamsScreen() {
   const user = useAuthStore((state) => state.user);
@@ -153,8 +153,8 @@ export default function TeamsScreen() {
   const activeTeam = teams.find((team) => team.active);
 
   return (
-    <SafeAreaView className="flex-1 bg-beasts-soft">
-      <View className="flex-1 px-[18px] pt-[18px]">
+    <SafeAreaView className="flex-1 bg-beasts-soft" edges={['top']}>
+      <View className="flex-1 px-[18px] pt-6">
         <View className="mb-[18px] flex-row items-center justify-between">
           <View>
             <Text className="text-3xl font-extrabold text-beasts-ink">Equipos</Text>
