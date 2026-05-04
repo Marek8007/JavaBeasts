@@ -12,10 +12,15 @@ export const activateTeamAction = async (userId: number, teamId: number): Promis
   return data;
 };
 
-export const createTeamAction = async (userId: number, name: string): Promise<TeamResponse> => {
+export const createTeamAction = async (
+  userId: number,
+  name: string,
+  iconName?: string
+): Promise<TeamResponse> => {
   const { data } = await javabeastsApi.post<TeamResponse>('/teams', {
     userId,
     name,
+    ...(iconName ? { iconName } : {}),
   });
   return data;
 };
@@ -23,10 +28,12 @@ export const createTeamAction = async (userId: number, name: string): Promise<Te
 export const renameTeamAction = async (
   userId: number,
   teamId: number,
-  name: string
+  name: string,
+  iconName?: string
 ): Promise<TeamResponse> => {
   const { data } = await javabeastsApi.put<TeamResponse>(`/teams/${teamId}?userId=${userId}`, {
     name,
+    ...(iconName ? { iconName } : {}),
   });
   return data;
 };

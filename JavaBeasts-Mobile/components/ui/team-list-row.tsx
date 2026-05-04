@@ -1,6 +1,11 @@
 import { TeamResponse } from '@/interfaces/team.interface';
 import { Ionicons } from '@expo/vector-icons';
+import { ComponentProps } from 'react';
 import { ActivityIndicator, Pressable, Text, View } from 'react-native';
+
+type IoniconName = ComponentProps<typeof Ionicons>['name'];
+
+const DEFAULT_TEAM_ICON: IoniconName = 'paw-outline';
 
 type TeamListRowProps = {
   activating?: boolean;
@@ -17,6 +22,8 @@ export function TeamListRow({
   onRename,
   team,
 }: TeamListRowProps) {
+  const iconName = (team.iconName || DEFAULT_TEAM_ICON) as IoniconName;
+
   return (
     <View
       className={`min-h-[68px] flex-row items-center border-b border-[#edf1f6] bg-white px-4 py-[9px] ${
@@ -31,11 +38,7 @@ export function TeamListRow({
         {activating ? (
           <ActivityIndicator color="#1e4f8f" />
         ) : (
-          <Ionicons
-            name={team.active ? 'star' : 'paw-outline'}
-            size={22}
-            color={team.active ? '#ffffff' : '#1e4f8f'}
-          />
+          <Ionicons name={iconName} size={22} color={team.active ? '#ffffff' : '#1e4f8f'} />
         )}
       </Pressable>
 
