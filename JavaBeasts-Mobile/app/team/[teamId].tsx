@@ -650,7 +650,7 @@ function MovePicker({
     <View className="flex-1">
       <Text className="mb-2 text-xs font-extrabold uppercase text-beasts-muted">{title}</Text>
       <ScrollView
-        className="max-h-[172px]"
+        className="flex-1"
         contentContainerClassName="gap-2"
         nestedScrollEnabled
         showsVerticalScrollIndicator>
