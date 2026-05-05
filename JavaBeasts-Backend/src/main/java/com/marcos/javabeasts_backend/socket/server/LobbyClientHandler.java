@@ -69,10 +69,18 @@ public class LobbyClientHandler implements Runnable {
 
         return switch (request.code()) {
             case SocketCodes.ROOM_STATUS -> successResponse(lobbyRoomService.getRoomStatus());
-            case SocketCodes.JOIN_ROOM -> successResponse(lobbyRoomService.joinRoom(requiredString(data, "username")));
-            case SocketCodes.LEAVE_ROOM -> successResponse(lobbyRoomService.leaveRoom(requiredString(data, "username")));
+            case SocketCodes.JOIN_ROOM -> successResponse(
+                    lobbyRoomService.joinRoom(requiredString(data, "roomCode"), requiredString(data, "username"))
+            );
+            case SocketCodes.LEAVE_ROOM -> successResponse(
+                    lobbyRoomService.leaveRoom(requiredString(data, "roomCode"), requiredString(data, "username"))
+            );
             case SocketCodes.SET_READY -> successResponse(
-                    lobbyRoomService.setReady(requiredString(data, "username"), requiredBoolean(data, "ready"))
+                    lobbyRoomService.setReady(
+                            requiredString(data, "roomCode"),
+                            requiredString(data, "username"),
+                            requiredBoolean(data, "ready")
+                    )
             );
             default -> errorResponse("Codigo de operacion no soportado");
         };

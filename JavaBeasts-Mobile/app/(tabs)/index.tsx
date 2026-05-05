@@ -1,5 +1,7 @@
 import { logoutAction } from '@/actions/auth.actions';
+import { leaveRoomAction } from '@/actions/lobby-socket.actions';
 import { useAuthStore } from '@/stores/authStore';
+import { useLobbyStore } from '@/stores/lobbyStore';
 import { Ionicons } from '@expo/vector-icons';
 import { router } from 'expo-router';
 import { Alert, Pressable, SafeAreaView, Text, View } from 'react-native';
@@ -7,14 +9,29 @@ import { Alert, Pressable, SafeAreaView, Text, View } from 'react-native';
 export default function HomeScreen() {
   const user = useAuthStore((state) => state.user);
   const clearSession = useAuthStore((state) => state.logout);
+  const roomStatus = useLobbyStore((state) => state.roomStatus);
+  const clearRoom = useLobbyStore((state) => state.clearRoom);
 
   async function handleLogout() {
     try {
       if (user) {
-        await logoutAction(user.username);
+        if (roomStatus) {
+          try {
+            await leaveRoomAction(roomStatus.roomCode, user.username);
+          } catch {
+            Alert.alert('Aviso', 'No se pudo salir de la sala en el backend, pero se limpiara la sesion local.');
+          } finally {
+            clearRoom();
+          }
+        }
+
+        try {
+          await logoutAction(user.username);
+        } catch {
+          Alert.alert('Aviso', 'No se pudo cerrar sesion en el backend, pero se limpiara la sesion local.');
+          clearRoom();
+        }
       }
-    } catch {
-      Alert.alert('Aviso', 'No se pudo cerrar sesion en el backend, pero se limpiara la sesion local.');
     } finally {
       await clearSession();
       router.replace('/(auth)/login');
