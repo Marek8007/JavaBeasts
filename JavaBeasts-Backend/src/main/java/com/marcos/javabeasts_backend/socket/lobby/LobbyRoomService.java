@@ -2,6 +2,7 @@ package com.marcos.javabeasts_backend.socket.lobby;
 
 import com.marcos.javabeasts_backend.socket.lobby.dto.PlayerSlotPayload;
 import com.marcos.javabeasts_backend.socket.lobby.dto.RoomStatusPayload;
+import jakarta.annotation.PostConstruct;
 import org.springframework.stereotype.Service;
 
 import java.util.concurrent.ThreadLocalRandom;
@@ -10,6 +11,11 @@ import java.util.concurrent.ThreadLocalRandom;
 public class LobbyRoomService {
 
     private final LobbyRoom room = new LobbyRoom(generateRoomCode());
+
+    @PostConstruct
+    public void logRoomCode() {
+        System.out.println("[TCP LOBBY] Codigo de sala generado: " + room.getRoomCode());
+    }
 
     public synchronized LobbyRoom getRoom() {
         return room;
