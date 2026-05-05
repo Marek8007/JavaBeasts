@@ -1,5 +1,7 @@
 package com.marcos.javabeasts_javafx;
 
+import com.marcos.javabeasts_javafx.socket.LobbyTcpClient;
+import com.marcos.javabeasts_javafx.socket.RoomStatusData;
 import javafx.application.Application;
 import javafx.geometry.Insets;
 import javafx.geometry.Pos;
@@ -14,6 +16,8 @@ public class JavaBeastsLobbyApp extends Application {
 
     @Override
     public void start(Stage stage) {
+        LobbyTcpClient lobbyTcpClient = new LobbyTcpClient("127.0.0.1", 7878);
+
         Label title = new Label("JavaBeasts");
         title.setFont(Font.font("System", FontWeight.BOLD, 32));
 
@@ -22,6 +26,13 @@ public class JavaBeastsLobbyApp extends Application {
 
         Label placeholder = new Label("Lobby JavaFX en preparacion...");
         placeholder.setFont(Font.font(16));
+
+        try {
+            RoomStatusData roomStatus = lobbyTcpClient.fetchRoomStatus();
+            placeholder.setText("Conectado al lobby TCP. Sala " + roomStatus.getRoomCode());
+        } catch (Exception e) {
+            placeholder.setText("Sin conexion con el lobby TCP");
+        }
 
         VBox root = new VBox(12, title, subtitle, placeholder);
         root.setPadding(new Insets(32));
