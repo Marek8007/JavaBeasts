@@ -1,8 +1,8 @@
-import { joinRoomAction } from '@/actions/lobby-socket.actions';
+import { getRoomStatusAction, joinRoomAction, leaveRoomAction } from '@/actions/lobby-socket.actions';
 import { RoomStatusPayload } from '@/interfaces/lobby-socket.interface';
 import { useAuthStore } from '@/stores/authStore';
 import { Ionicons } from '@expo/vector-icons';
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import {
   ActivityIndicator,
   KeyboardAvoidingView,
@@ -15,13 +15,46 @@ import {
 } from 'react-native';
 
 const ROOM_CODE_LENGTH = 6;
+const ROOM_STATUS_REFRESH_MS = 2500;
 
 export default function RoomJoinScreen() {
   const user = useAuthStore((state) => state.user);
   const [roomCode, setRoomCode] = useState('');
   const [joining, setJoining] = useState(false);
+  const [leaving, setLeaving] = useState(false);
   const [roomStatus, setRoomStatus] = useState<RoomStatusPayload | null>(null);
   const [error, setError] = useState('');
+
+  useEffect(() => {
+    if (!roomStatus) {
+      return;
+    }
+
+    let mounted = true;
+
+    const refreshRoomStatus = async () => {
+      try {
+        const status = await getRoomStatusAction();
+
+        if (!mounted) {
+          return;
+        }
+
+        setRoomStatus(status);
+      } catch {
+        // Keep the last known state; the next interval can recover.
+      }
+    };
+
+    const intervalId = setInterval(() => {
+      void refreshRoomStatus();
+    }, ROOM_STATUS_REFRESH_MS);
+
+    return () => {
+      mounted = false;
+      clearInterval(intervalId);
+    };
+  }, [roomStatus]);
 
   function updateRoomCode(value: string) {
     setRoomCode(value.replace(/\D/g, '').slice(0, ROOM_CODE_LENGTH));
@@ -62,6 +95,24 @@ export default function RoomJoinScreen() {
       setError(requestError?.message ? String(requestError.message) : 'No se pudo entrar en la sala.');
     } finally {
       setJoining(false);
+    }
+  }
+
+  async function leaveRoom() {
+    if (!user || !roomStatus || leaving) {
+      return;
+    }
+
+    setLeaving(true);
+    setError('');
+
+    try {
+      await leaveRoomAction(roomStatus.roomCode, user.username);
+      setRoomStatus(null);
+    } catch (requestError: any) {
+      setError(requestError?.message ? String(requestError.message) : 'No se pudo salir de la sala.');
+    } finally {
+      setLeaving(false);
     }
   }
 
@@ -121,6 +172,18 @@ export default function RoomJoinScreen() {
                   <LobbyPlayerLine label="Jugador 1" username={roomStatus.playerOne?.username} />
                   <LobbyPlayerLine label="Jugador 2" username={roomStatus.playerTwo?.username} />
                 </View>
+                <Pressable
+                  className={`min-h-11 items-center justify-center rounded-lg border border-[#bb3e03] bg-white px-4 active:opacity-80 ${
+                    leaving ? 'opacity-65' : ''
+                  }`}
+                  disabled={leaving}
+                  onPress={() => void leaveRoom()}>
+                  {leaving ? (
+                    <ActivityIndicator color="#bb3e03" />
+                  ) : (
+                    <Text className="text-sm font-extrabold text-[#bb3e03]">Salir de la sala</Text>
+                  )}
+                </Pressable>
               </View>
             ) : null}
 
