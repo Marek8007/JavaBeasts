@@ -31,6 +31,13 @@ export default function TabLayout() {
           tabBarIcon: ({ color, size }) => <Ionicons size={size} name="albums-outline" color={color} />,
         }}
       />
+      <Tabs.Screen
+        name="room"
+        options={{
+          title: 'Sala',
+          tabBarIcon: ({ color, size }) => <Ionicons size={size} name="keypad-outline" color={color} />,
+        }}
+      />
     </Tabs>
   );
 }
