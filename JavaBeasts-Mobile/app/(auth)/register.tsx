@@ -9,7 +9,6 @@ import {
   Platform,
   Pressable,
   SafeAreaView,
-  StyleSheet,
   Text,
   TextInput,
   View,
@@ -50,143 +49,64 @@ export default function RegisterScreen() {
   }
 
   return (
-    <SafeAreaView style={styles.safeArea}>
+    <SafeAreaView className="flex-1 bg-beasts-soft">
       <KeyboardAvoidingView
         behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
-        style={styles.screen}>
-        <View style={styles.header}>
+        className="flex-1 justify-center px-6">
+        <View className="mb-[34px] items-center gap-2">
           <Ionicons name="person-add-outline" size={44} color="#1e4f8f" />
-          <Text style={styles.title}>Crear cuenta</Text>
-          <Text style={styles.subtitle}>Registrate para jugar desde el movil.</Text>
+          <Text className="text-3xl font-extrabold text-beasts-ink">Crear cuenta</Text>
+          <Text className="text-[15px] text-beasts-muted">Registrate para jugar desde el movil.</Text>
         </View>
 
-        <View style={styles.form}>
-          <View style={styles.inputRow}>
+        <View className="gap-3.5">
+          <View className="min-h-[52px] flex-row items-center rounded-lg border border-beasts-line bg-white px-3.5">
             <Ionicons name="person-outline" size={20} color="#68758a" />
             <TextInput
               autoCapitalize="none"
               autoCorrect={false}
+              className="ml-2.5 flex-1 text-base text-beasts-ink"
               onChangeText={setUsername}
               placeholder="Usuario"
               placeholderTextColor="#8a93a3"
-              style={styles.input}
               value={username}
             />
           </View>
 
-          <View style={styles.inputRow}>
+          <View className="min-h-[52px] flex-row items-center rounded-lg border border-beasts-line bg-white px-3.5">
             <Ionicons name="lock-closed-outline" size={20} color="#68758a" />
             <TextInput
               autoCapitalize="none"
+              className="ml-2.5 flex-1 text-base text-beasts-ink"
               onChangeText={setPassword}
               placeholder="Contrasena"
               placeholderTextColor="#8a93a3"
               secureTextEntry
-              style={styles.input}
               value={password}
             />
           </View>
 
           <Pressable
+            className={`min-h-[52px] items-center justify-center rounded-lg bg-beasts-blue active:opacity-80 ${
+              loading ? 'opacity-65' : ''
+            }`}
             disabled={loading}
-            onPress={handleRegister}
-            style={({ pressed }) => [
-              styles.primaryButton,
-              pressed && styles.pressed,
-              loading && styles.disabled,
-            ]}>
+            onPress={handleRegister}>
             {loading ? (
               <ActivityIndicator color="#ffffff" />
             ) : (
-              <Text style={styles.primaryButtonText}>Crear cuenta</Text>
+              <Text className="text-base font-extrabold text-white">Crear cuenta</Text>
             )}
           </Pressable>
         </View>
 
-        <View style={styles.footer}>
-          <Text style={styles.footerText}>Ya tienes cuenta?</Text>
+        <View className="mt-7 flex-row justify-center">
+          <Text className="text-sm text-beasts-muted">Ya tienes cuenta?</Text>
           <Pressable onPress={() => router.replace('/(auth)/login')}>
-            <Text style={styles.footerLink}> Inicia sesion</Text>
+            <Text className="text-sm font-extrabold text-beasts-blue"> Inicia sesion</Text>
           </Pressable>
         </View>
       </KeyboardAvoidingView>
     </SafeAreaView>
   );
 }
-
-const styles = StyleSheet.create({
-  safeArea: {
-    flex: 1,
-    backgroundColor: '#f3f6fb',
-  },
-  screen: {
-    flex: 1,
-    justifyContent: 'center',
-    paddingHorizontal: 24,
-  },
-  header: {
-    alignItems: 'center',
-    gap: 8,
-    marginBottom: 34,
-  },
-  title: {
-    color: '#172033',
-    fontSize: 30,
-    fontWeight: '800',
-  },
-  subtitle: {
-    color: '#5d6678',
-    fontSize: 15,
-  },
-  form: {
-    gap: 14,
-  },
-  inputRow: {
-    alignItems: 'center',
-    backgroundColor: '#ffffff',
-    borderColor: '#d9e1ec',
-    borderRadius: 8,
-    borderWidth: 1,
-    flexDirection: 'row',
-    minHeight: 52,
-    paddingHorizontal: 14,
-  },
-  input: {
-    color: '#172033',
-    flex: 1,
-    fontSize: 16,
-    marginLeft: 10,
-  },
-  primaryButton: {
-    alignItems: 'center',
-    backgroundColor: '#1e4f8f',
-    borderRadius: 8,
-    justifyContent: 'center',
-    minHeight: 52,
-  },
-  primaryButtonText: {
-    color: '#ffffff',
-    fontSize: 16,
-    fontWeight: '800',
-  },
-  pressed: {
-    opacity: 0.82,
-  },
-  disabled: {
-    opacity: 0.65,
-  },
-  footer: {
-    flexDirection: 'row',
-    justifyContent: 'center',
-    marginTop: 28,
-  },
-  footerText: {
-    color: '#5d6678',
-    fontSize: 14,
-  },
-  footerLink: {
-    color: '#1e4f8f',
-    fontSize: 14,
-    fontWeight: '800',
-  },
-});

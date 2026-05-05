@@ -10,6 +10,9 @@ public record CreateTeamRequest(
 
         @NotBlank
         @Size(min = 3, max = 50)
-        String name
+        String name,
+
+        @Size(max = 60)
+        String iconName
 ) {
 }

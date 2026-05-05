@@ -4,7 +4,7 @@ USE JavaBeasts;
 -- =========================
 -- 1. TYPES
 -- =========================
-CREATE TABLE Types (
+CREATE TABLE IF NOT EXISTS Types (
     Type_Id INT AUTO_INCREMENT PRIMARY KEY,
     Type VARCHAR(25) NOT NULL UNIQUE,
     Description VARCHAR(200)
@@ -13,7 +13,7 @@ CREATE TABLE Types (
 -- =========================
 -- 2. USERS
 -- =========================
-CREATE TABLE Users (
+CREATE TABLE IF NOT EXISTS Users (
     User_Id INT AUTO_INCREMENT PRIMARY KEY,
     Username VARCHAR(25) NOT NULL UNIQUE,
     Password VARCHAR(255) NOT NULL,
@@ -25,7 +25,7 @@ CREATE TABLE Users (
 -- =========================
 -- 3. JABEAS
 -- =========================
-CREATE TABLE JaBeas (
+CREATE TABLE IF NOT EXISTS JaBeas (
     JaBeas_Id INT AUTO_INCREMENT PRIMARY KEY,
     Name VARCHAR(25) NOT NULL UNIQUE,
     Description VARCHAR(200) NOT NULL,
@@ -44,7 +44,7 @@ CREATE TABLE JaBeas (
 -- NULL = movimiento normal
 -- valor = movimiento unico de ese JaBea
 -- =========================
-CREATE TABLE Moves (
+CREATE TABLE IF NOT EXISTS Moves (
     Move_Id INT AUTO_INCREMENT PRIMARY KEY,
     Type_Id INT NOT NULL,
     Name VARCHAR(25) NOT NULL UNIQUE,
@@ -62,10 +62,11 @@ CREATE TABLE Moves (
 -- =========================
 -- 5. TEAMS
 -- =========================
-CREATE TABLE Teams (
+CREATE TABLE IF NOT EXISTS Teams (
     Team_Id INT AUTO_INCREMENT PRIMARY KEY,
     User_Id INT NOT NULL,
     Name VARCHAR(50) NOT NULL,
+    Icon_Name VARCHAR(60) NOT NULL DEFAULT 'paw-outline',
     Is_Active BOOLEAN NOT NULL DEFAULT FALSE,
     CONSTRAINT fk_teams_user
         FOREIGN KEY (User_Id) REFERENCES Users(User_Id)
@@ -77,7 +78,7 @@ CREATE TABLE Teams (
 -- JaBea configurado dentro de un equipo
 -- PK compuesta: un slot concreto dentro de un equipo
 -- =========================
-CREATE TABLE JaBeas_Teamed (
+CREATE TABLE IF NOT EXISTS JaBeas_Teamed (
     Team_Id INT NOT NULL,
     JaBeas_Id INT NOT NULL,
     Move_1 INT NOT NULL,
@@ -99,7 +100,7 @@ CREATE TABLE JaBeas_Teamed (
 -- =========================
 -- 7. MATCHES_HISTORY
 -- =========================
-CREATE TABLE Matches_History (
+CREATE TABLE IF NOT EXISTS Matches_History (
     Match_Id INT AUTO_INCREMENT PRIMARY KEY,
     Winner_Id INT NOT NULL,
     Loser_Id INT NOT NULL,
@@ -114,7 +115,7 @@ CREATE TABLE Matches_History (
 -- 8. JABEAS_HISTORY
 -- Guarda los JaBeas usados en una partida
 -- =========================
-CREATE TABLE JaBeas_History (
+CREATE TABLE IF NOT EXISTS JaBeas_History (
     JaBeas_History_Id INT AUTO_INCREMENT PRIMARY KEY,
     Match_Id INT NOT NULL,
     JaBeas_Id INT NOT NULL,

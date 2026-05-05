@@ -22,6 +22,9 @@ public class Team {
     @Column(name = "Name", nullable = false, length = 50)
     private String name;
 
+    @Column(name = "Icon_Name", nullable = false, length = 60)
+    private String iconName;
+
     @Column(name = "Is_Active", nullable = false)
     private boolean active;
 }

@@ -18,6 +18,8 @@ import java.util.List;
 public class TeamService {
 
     private static final long MAX_TEAMS_PER_USER = 10;
+    private static final String DEFAULT_TEAM_ICON = "paw-outline";
+    private static final String ICON_NAME_PATTERN = "^[a-z0-9-]+$";
 
     private final TeamRepository teamRepository;
     private final UserRepository userRepository;
@@ -47,6 +49,7 @@ public class TeamService {
         Team team = new Team();
         team.setUser(user);
         team.setName(request.name().trim());
+        team.setIconName(normalizeIconName(request.iconName()));
         team.setActive(teamRepository.findByUserUserIdAndActiveTrue(user.getUserId()).isEmpty());
 
         return toResponse(teamRepository.save(team));
@@ -56,6 +59,11 @@ public class TeamService {
     public TeamResponse renameTeam(Integer userId, Integer teamId, UpdateTeamRequest request) {
         Team team = getTeamOrThrow(userId, teamId);
         team.setName(request.name().trim());
+
+        if (request.iconName() != null) {
+            team.setIconName(normalizeIconName(request.iconName()));
+        }
+
         return toResponse(teamRepository.save(team));
     }
 
@@ -111,7 +119,22 @@ public class TeamService {
                 team.getTeamId(),
                 team.getUser().getUserId(),
                 team.getName(),
+                team.getIconName(),
                 team.isActive()
         );
+    }
+
+    private String normalizeIconName(String iconName) {
+        if (iconName == null || iconName.isBlank()) {
+            return DEFAULT_TEAM_ICON;
+        }
+
+        String normalizedIconName = iconName.trim();
+
+        if (!normalizedIconName.matches(ICON_NAME_PATTERN)) {
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Icono de equipo no valido");
+        }
+
+        return normalizedIconName;
     }
 }
