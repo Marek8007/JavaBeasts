@@ -1,6 +1,6 @@
 import { getRoomStatusAction, joinRoomAction, leaveRoomAction } from '@/actions/lobby-socket.actions';
-import { RoomStatusPayload } from '@/interfaces/lobby-socket.interface';
 import { useAuthStore } from '@/stores/authStore';
+import { useLobbyStore } from '@/stores/lobbyStore';
 import { Ionicons } from '@expo/vector-icons';
 import { useEffect, useState } from 'react';
 import {
@@ -19,10 +19,11 @@ const ROOM_STATUS_REFRESH_MS = 2500;
 
 export default function RoomJoinScreen() {
   const user = useAuthStore((state) => state.user);
+  const roomStatus = useLobbyStore((state) => state.roomStatus);
+  const setRoomStatus = useLobbyStore((state) => state.setRoomStatus);
   const [roomCode, setRoomCode] = useState('');
   const [joining, setJoining] = useState(false);
   const [leaving, setLeaving] = useState(false);
-  const [roomStatus, setRoomStatus] = useState<RoomStatusPayload | null>(null);
   const [error, setError] = useState('');
 
   useEffect(() => {
@@ -54,7 +55,7 @@ export default function RoomJoinScreen() {
       mounted = false;
       clearInterval(intervalId);
     };
-  }, [roomStatus]);
+  }, [roomStatus, setRoomStatus]);
 
   function updateRoomCode(value: string) {
     setRoomCode(value.replace(/\D/g, '').slice(0, ROOM_CODE_LENGTH));
