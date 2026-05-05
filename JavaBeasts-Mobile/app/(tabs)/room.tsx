@@ -1,7 +1,10 @@
+import { joinRoomAction } from '@/actions/lobby-socket.actions';
+import { RoomStatusPayload } from '@/interfaces/lobby-socket.interface';
 import { useAuthStore } from '@/stores/authStore';
 import { Ionicons } from '@expo/vector-icons';
 import { useState } from 'react';
 import {
+  ActivityIndicator,
   KeyboardAvoidingView,
   Platform,
   Pressable,
@@ -16,17 +19,27 @@ const ROOM_CODE_LENGTH = 6;
 export default function RoomJoinScreen() {
   const user = useAuthStore((state) => state.user);
   const [roomCode, setRoomCode] = useState('');
-  const [validatedCode, setValidatedCode] = useState('');
+  const [joining, setJoining] = useState(false);
+  const [roomStatus, setRoomStatus] = useState<RoomStatusPayload | null>(null);
   const [error, setError] = useState('');
 
   function updateRoomCode(value: string) {
     setRoomCode(value.replace(/\D/g, '').slice(0, ROOM_CODE_LENGTH));
-    setValidatedCode('');
+    setRoomStatus(null);
     setError('');
   }
 
-  function validateRoomCode() {
+  async function joinRoom() {
+    if (joining) {
+      return;
+    }
+
     const trimmedCode = roomCode.trim();
+
+    if (!user) {
+      setError('Inicia sesion antes de entrar a una sala.');
+      return;
+    }
 
     if (!trimmedCode) {
       setError('Introduce el codigo de sala.');
@@ -38,8 +51,18 @@ export default function RoomJoinScreen() {
       return;
     }
 
+    setJoining(true);
     setError('');
-    setValidatedCode(trimmedCode);
+
+    try {
+      const status = await joinRoomAction(trimmedCode, user.username);
+      setRoomStatus(status);
+    } catch (requestError: any) {
+      setRoomStatus(null);
+      setError(requestError?.message ? String(requestError.message) : 'No se pudo entrar en la sala.');
+    } finally {
+      setJoining(false);
+    }
   }
 
   return (
@@ -86,23 +109,59 @@ export default function RoomJoinScreen() {
               </View>
             ) : null}
 
-            {validatedCode ? (
-              <View className="mt-3 flex-row items-center gap-2 rounded-lg border border-[#cde7d8] bg-[#f0fdf4] px-3.5 py-3">
-                <Ionicons name="checkmark-circle-outline" size={20} color="#15803d" />
-                <Text className="flex-1 text-sm font-semibold leading-5 text-[#15803d]">
-                  Codigo preparado: {validatedCode}
-                </Text>
+            {roomStatus ? (
+              <View className="mt-3 gap-3 rounded-lg border border-[#cde7d8] bg-[#f0fdf4] px-3.5 py-3">
+                <View className="flex-row items-center gap-2">
+                  <Ionicons name="checkmark-circle-outline" size={20} color="#15803d" />
+                  <Text className="flex-1 text-sm font-semibold leading-5 text-[#15803d]">
+                    Dentro de la sala {roomStatus.roomCode}
+                  </Text>
+                </View>
+                <View className="gap-2">
+                  <LobbyPlayerLine label="Jugador 1" username={roomStatus.playerOne?.username} />
+                  <LobbyPlayerLine label="Jugador 2" username={roomStatus.playerTwo?.username} />
+                </View>
               </View>
             ) : null}
 
             <Pressable
-              className="mt-5 min-h-12 items-center justify-center rounded-lg bg-beasts-blue px-[18px] active:opacity-80"
-              onPress={validateRoomCode}>
-              <Text className="text-[15px] font-extrabold text-white">Unirse</Text>
+              className={`mt-5 min-h-12 items-center justify-center rounded-lg bg-beasts-blue px-[18px] active:opacity-80 ${
+                joining ? 'opacity-65' : ''
+              }`}
+              disabled={joining}
+              onPress={() => void joinRoom()}>
+              {joining ? (
+                <ActivityIndicator color="#ffffff" />
+              ) : (
+                <Text className="text-[15px] font-extrabold text-white">Unirse</Text>
+              )}
             </Pressable>
           </View>
         </View>
       </KeyboardAvoidingView>
     </SafeAreaView>
+  );
+}
+
+function LobbyPlayerLine({ label, username }: { label: string; username?: string | null }) {
+  return (
+    <View className="flex-row items-center justify-between rounded-lg bg-white px-3 py-2">
+      <Text className="text-xs font-extrabold uppercase text-beasts-muted">{label}</Text>
+      <View className="flex-row items-center gap-1.5">
+        {username ? (
+          <>
+            <Ionicons name="person-circle-outline" size={18} color="#15803d" />
+            <Text className="max-w-[150px] text-sm font-extrabold text-beasts-ink" numberOfLines={1}>
+              {username}
+            </Text>
+          </>
+        ) : (
+          <>
+            <Ionicons name="ellipse-outline" size={16} color="#68758a" />
+            <Text className="text-sm font-semibold text-beasts-muted">Libre</Text>
+          </>
+        )}
+      </View>
+    </View>
   );
 }
