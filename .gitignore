@@ -9,5 +9,6 @@ JavaBeasts-Backend/.env
 JavaBeasts-Backend/src/main/java/com/marcos/javabeasts_backend/Testing.java
 JavaBeasts-Backend/.idea/
 JavaBeasts-Backend/target/
+JavaBeasts-JavaFX/target/
 
 .idea/
