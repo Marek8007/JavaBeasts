@@ -43,21 +43,17 @@ export const sendLobbyRequest = <TResponse>(
   code: LobbySocketCode,
   data: Record<string, unknown> = {}
 ): Promise<TResponse> => {
-  return new Promise((resolve, reject) => {
-    const socket = TcpSocket.createConnection(
-      {
-        host: getLobbySocketHost(),
-        port: getLobbySocketPort(),
-      },
-      () => {
-        socket.write(JSON.stringify({ code, data }) + '\n');
-      }
+  if (!TcpSocket?.createConnection) {
+    return Promise.reject(
+      new LobbySocketError('El cliente TCP no esta disponible en Expo Go. Usa una development build para probar la sala.')
     );
+  }
+
+  return new Promise((resolve, reject) => {
     let responseBuffer = '';
     let settled = false;
-    const timeout = setTimeout(() => {
-      settleWithError(new LobbySocketError('Tiempo de espera agotado al conectar con la sala'));
-    }, REQUEST_TIMEOUT_MS);
+    let timeout: ReturnType<typeof setTimeout>;
+    let socket: ReturnType<typeof TcpSocket.createConnection>;
 
     const cleanup = () => {
       clearTimeout(timeout);
@@ -83,6 +79,20 @@ export const sendLobbyRequest = <TResponse>(
       cleanup();
       reject(error);
     };
+
+    timeout = setTimeout(() => {
+      settleWithError(new LobbySocketError('Tiempo de espera agotado al conectar con la sala'));
+    }, REQUEST_TIMEOUT_MS);
+
+    socket = TcpSocket.createConnection(
+      {
+        host: getLobbySocketHost(),
+        port: getLobbySocketPort(),
+      },
+      () => {
+        socket.write(JSON.stringify({ code, data }) + '\n');
+      }
+    );
 
     const parseResponse = (rawResponse: string) => {
       try {
