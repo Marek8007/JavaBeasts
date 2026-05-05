@@ -35,6 +35,7 @@ export default function RoomJoinScreen() {
     (slot) => slot?.username === user?.username
   );
   const ready = Boolean(currentPlayer?.ready);
+  const joined = Boolean(roomStatus);
 
   useEffect(() => {
     if (!roomStatus) {
@@ -68,13 +69,17 @@ export default function RoomJoinScreen() {
   }, [roomStatus, setRoomStatus]);
 
   function updateRoomCode(value: string) {
+    if (joined) {
+      return;
+    }
+
     setRoomCode(value.replace(/\D/g, '').slice(0, ROOM_CODE_LENGTH));
     setRoomStatus(null);
     setError('');
   }
 
   async function joinRoom() {
-    if (joining) {
+    if (joining || joined) {
       return;
     }
 
@@ -111,6 +116,11 @@ export default function RoomJoinScreen() {
 
   async function leaveRoom() {
     if (!user || !roomStatus || leaving) {
+      return;
+    }
+
+    if (ready) {
+      setError('Desmarca listo antes de salir de la sala.');
       return;
     }
 
@@ -155,7 +165,9 @@ export default function RoomJoinScreen() {
           <View className="mb-[18px]">
             <Text className="text-3xl font-extrabold text-beasts-ink">Sala</Text>
             <Text className="mt-1 max-w-[300px] text-sm leading-5 text-beasts-muted">
-              Entra con el codigo que aparece en la pantalla principal.
+              {joined
+                ? 'Permanece en la sala mientras se prepara la partida.'
+                : 'Entra con el codigo que aparece en la pantalla principal.'}
             </Text>
           </View>
 
@@ -171,7 +183,10 @@ export default function RoomJoinScreen() {
             </View>
 
             <TextInput
-              className="min-h-[62px] rounded-lg border border-beasts-line bg-[#f8fafc] px-4 text-center text-2xl font-extrabold tracking-[8px] text-beasts-ink"
+              className={`min-h-[62px] rounded-lg border px-4 text-center text-2xl font-extrabold tracking-[8px] text-beasts-ink ${
+                joined ? 'border-[#cde7d8] bg-[#f0fdf4]' : 'border-beasts-line bg-[#f8fafc]'
+              }`}
+              editable={!joined}
               inputMode="numeric"
               keyboardType="number-pad"
               maxLength={ROOM_CODE_LENGTH}
@@ -195,6 +210,24 @@ export default function RoomJoinScreen() {
                   <Ionicons name="checkmark-circle-outline" size={20} color="#15803d" />
                   <Text className="flex-1 text-sm font-semibold leading-5 text-[#15803d]">
                     Dentro de la sala {roomStatus.roomCode}
+                  </Text>
+                </View>
+                <View
+                  className={`flex-row items-center gap-2 rounded-lg px-3 py-2 ${
+                    roomStatus.canStart ? 'bg-[#dcfce7]' : 'bg-white'
+                  }`}>
+                  <Ionicons
+                    name={roomStatus.canStart ? 'flash-outline' : 'hourglass-outline'}
+                    size={18}
+                    color={roomStatus.canStart ? '#15803d' : '#68758a'}
+                  />
+                  <Text
+                    className={`flex-1 text-sm font-semibold leading-5 ${
+                      roomStatus.canStart ? 'text-[#15803d]' : 'text-beasts-muted'
+                    }`}>
+                    {roomStatus.canStart
+                      ? 'Ambos jugadores estan listos.'
+                      : 'Esperando a que ambos jugadores marquen listo.'}
                   </Text>
                 </View>
                 <View className="gap-2">
@@ -232,9 +265,9 @@ export default function RoomJoinScreen() {
                 </Pressable>
                 <Pressable
                   className={`min-h-11 items-center justify-center rounded-lg border border-[#bb3e03] bg-white px-4 active:opacity-80 ${
-                    leaving ? 'opacity-65' : ''
+                    leaving || ready ? 'opacity-45' : ''
                   }`}
-                  disabled={leaving}
+                  disabled={leaving || ready}
                   onPress={() => void leaveRoom()}>
                   {leaving ? (
                     <ActivityIndicator color="#bb3e03" />
@@ -247,9 +280,9 @@ export default function RoomJoinScreen() {
 
             <Pressable
               className={`mt-5 min-h-12 items-center justify-center rounded-lg bg-beasts-blue px-[18px] active:opacity-80 ${
-                joining ? 'opacity-65' : ''
+                joining || joined ? 'opacity-45' : ''
               }`}
-              disabled={joining}
+              disabled={joining || joined}
               onPress={() => void joinRoom()}>
               {joining ? (
                 <ActivityIndicator color="#ffffff" />
