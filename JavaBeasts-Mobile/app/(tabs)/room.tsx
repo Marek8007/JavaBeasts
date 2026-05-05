@@ -4,10 +4,13 @@ import {
   leaveRoomAction,
   setReadyAction,
 } from '@/actions/lobby-socket.actions';
+import { getTeamsByUserAction } from '@/actions/team.actions';
+import { TeamResponse } from '@/interfaces/team.interface';
 import { useAuthStore } from '@/stores/authStore';
 import { useLobbyStore } from '@/stores/lobbyStore';
 import { Ionicons } from '@expo/vector-icons';
-import { useEffect, useState } from 'react';
+import { useFocusEffect } from '@react-navigation/native';
+import { useCallback, useEffect, useState } from 'react';
 import {
   ActivityIndicator,
   KeyboardAvoidingView,
@@ -30,12 +33,38 @@ export default function RoomJoinScreen() {
   const [joining, setJoining] = useState(false);
   const [leaving, setLeaving] = useState(false);
   const [settingReady, setSettingReady] = useState(false);
+  const [teamsLoading, setTeamsLoading] = useState(false);
+  const [activeTeam, setActiveTeam] = useState<TeamResponse | null>(null);
   const [error, setError] = useState('');
   const currentPlayer = [roomStatus?.playerOne, roomStatus?.playerTwo].find(
     (slot) => slot?.username === user?.username
   );
   const ready = Boolean(currentPlayer?.ready);
   const joined = Boolean(roomStatus);
+
+  const loadActiveTeam = useCallback(async () => {
+    if (!user) {
+      setActiveTeam(null);
+      return;
+    }
+
+    setTeamsLoading(true);
+
+    try {
+      const teams = await getTeamsByUserAction(user.userId);
+      setActiveTeam(teams.find((team) => team.active) ?? null);
+    } catch {
+      setActiveTeam(null);
+    } finally {
+      setTeamsLoading(false);
+    }
+  }, [user]);
+
+  useFocusEffect(
+    useCallback(() => {
+      void loadActiveTeam();
+    }, [loadActiveTeam])
+  );
 
   useEffect(() => {
     if (!roomStatus) {
@@ -142,6 +171,11 @@ export default function RoomJoinScreen() {
       return;
     }
 
+    if (!ready && !activeTeam) {
+      setError('Selecciona un equipo activo antes de marcar listo.');
+      return;
+    }
+
     setSettingReady(true);
     setError('');
 
@@ -204,6 +238,21 @@ export default function RoomJoinScreen() {
               </View>
             ) : null}
 
+            <View className="mt-3 rounded-lg border border-beasts-line bg-[#f8fafc] px-3.5 py-3">
+              <View className="flex-row items-center justify-between gap-3">
+                <View className="flex-row flex-1 items-center gap-2">
+                  <Ionicons name="albums-outline" size={19} color="#1e4f8f" />
+                  <Text className="text-sm font-extrabold text-beasts-ink">Equipo activo</Text>
+                </View>
+                {teamsLoading ? <ActivityIndicator color="#1e4f8f" /> : null}
+              </View>
+              <Text className={`mt-2 text-sm leading-5 ${activeTeam ? 'text-[#42506a]' : 'text-beasts-warning'}`}>
+                {activeTeam
+                  ? activeTeam.name
+                  : 'No tienes ningun equipo activo seleccionado.'}
+              </Text>
+            </View>
+
             {roomStatus ? (
               <View className="mt-3 gap-3 rounded-lg border border-[#cde7d8] bg-[#f0fdf4] px-3.5 py-3">
                 <View className="flex-row items-center gap-2">
@@ -245,8 +294,8 @@ export default function RoomJoinScreen() {
                 <Pressable
                   className={`min-h-11 flex-row items-center justify-center gap-2 rounded-lg px-4 active:opacity-80 ${
                     ready ? 'bg-[#15803d]' : 'border border-[#15803d] bg-white'
-                  } ${settingReady ? 'opacity-65' : ''}`}
-                  disabled={settingReady}
+                  } ${settingReady || (!ready && !activeTeam) ? 'opacity-45' : ''}`}
+                  disabled={settingReady || (!ready && !activeTeam)}
                   onPress={() => void toggleReady()}>
                   {settingReady ? (
                     <ActivityIndicator color={ready ? '#ffffff' : '#15803d'} />
