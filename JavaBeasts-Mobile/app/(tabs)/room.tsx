@@ -1,4 +1,9 @@
-import { getRoomStatusAction, joinRoomAction, leaveRoomAction } from '@/actions/lobby-socket.actions';
+import {
+  getRoomStatusAction,
+  joinRoomAction,
+  leaveRoomAction,
+  setReadyAction,
+} from '@/actions/lobby-socket.actions';
 import { useAuthStore } from '@/stores/authStore';
 import { useLobbyStore } from '@/stores/lobbyStore';
 import { Ionicons } from '@expo/vector-icons';
@@ -24,7 +29,12 @@ export default function RoomJoinScreen() {
   const [roomCode, setRoomCode] = useState('');
   const [joining, setJoining] = useState(false);
   const [leaving, setLeaving] = useState(false);
+  const [settingReady, setSettingReady] = useState(false);
   const [error, setError] = useState('');
+  const currentPlayer = [roomStatus?.playerOne, roomStatus?.playerTwo].find(
+    (slot) => slot?.username === user?.username
+  );
+  const ready = Boolean(currentPlayer?.ready);
 
   useEffect(() => {
     if (!roomStatus) {
@@ -117,6 +127,24 @@ export default function RoomJoinScreen() {
     }
   }
 
+  async function toggleReady() {
+    if (!user || !roomStatus || settingReady) {
+      return;
+    }
+
+    setSettingReady(true);
+    setError('');
+
+    try {
+      const status = await setReadyAction(roomStatus.roomCode, user.username, !ready);
+      setRoomStatus(status);
+    } catch (requestError: any) {
+      setError(requestError?.message ? String(requestError.message) : 'No se pudo cambiar el estado de listo.');
+    } finally {
+      setSettingReady(false);
+    }
+  }
+
   return (
     <SafeAreaView className="flex-1 bg-beasts-soft">
       <KeyboardAvoidingView
@@ -170,9 +198,38 @@ export default function RoomJoinScreen() {
                   </Text>
                 </View>
                 <View className="gap-2">
-                  <LobbyPlayerLine label="Jugador 1" username={roomStatus.playerOne?.username} />
-                  <LobbyPlayerLine label="Jugador 2" username={roomStatus.playerTwo?.username} />
+                  <LobbyPlayerLine
+                    label="Jugador 1"
+                    ready={roomStatus.playerOne?.ready}
+                    username={roomStatus.playerOne?.username}
+                  />
+                  <LobbyPlayerLine
+                    label="Jugador 2"
+                    ready={roomStatus.playerTwo?.ready}
+                    username={roomStatus.playerTwo?.username}
+                  />
                 </View>
+                <Pressable
+                  className={`min-h-11 flex-row items-center justify-center gap-2 rounded-lg px-4 active:opacity-80 ${
+                    ready ? 'bg-[#15803d]' : 'border border-[#15803d] bg-white'
+                  } ${settingReady ? 'opacity-65' : ''}`}
+                  disabled={settingReady}
+                  onPress={() => void toggleReady()}>
+                  {settingReady ? (
+                    <ActivityIndicator color={ready ? '#ffffff' : '#15803d'} />
+                  ) : (
+                    <>
+                      <Ionicons
+                        name={ready ? 'checkmark-circle' : 'checkmark-circle-outline'}
+                        size={20}
+                        color={ready ? '#ffffff' : '#15803d'}
+                      />
+                      <Text className={`text-sm font-extrabold ${ready ? 'text-white' : 'text-[#15803d]'}`}>
+                        {ready ? 'Listo' : 'Marcar listo'}
+                      </Text>
+                    </>
+                  )}
+                </Pressable>
                 <Pressable
                   className={`min-h-11 items-center justify-center rounded-lg border border-[#bb3e03] bg-white px-4 active:opacity-80 ${
                     leaving ? 'opacity-65' : ''
@@ -207,14 +264,26 @@ export default function RoomJoinScreen() {
   );
 }
 
-function LobbyPlayerLine({ label, username }: { label: string; username?: string | null }) {
+function LobbyPlayerLine({
+  label,
+  ready,
+  username,
+}: {
+  label: string;
+  ready?: boolean | null;
+  username?: string | null;
+}) {
   return (
     <View className="flex-row items-center justify-between rounded-lg bg-white px-3 py-2">
       <Text className="text-xs font-extrabold uppercase text-beasts-muted">{label}</Text>
       <View className="flex-row items-center gap-1.5">
         {username ? (
           <>
-            <Ionicons name="person-circle-outline" size={18} color="#15803d" />
+            <Ionicons
+              name={ready ? 'checkmark-circle' : 'person-circle-outline'}
+              size={18}
+              color={ready ? '#15803d' : '#68758a'}
+            />
             <Text className="max-w-[150px] text-sm font-extrabold text-beasts-ink" numberOfLines={1}>
               {username}
             </Text>
