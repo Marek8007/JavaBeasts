@@ -34,7 +34,7 @@ public class LobbyTcpClient {
             String responseLine = in.readLine();
 
             if (responseLine == null || responseLine.isBlank()) {
-                throw new IOException("Respuesta vacia del lobby TCP");
+                throw new IOException("Respuesta vacía del lobby TCP");
             }
 
             SocketRoomStatusResponse response = gson.fromJson(responseLine, SocketRoomStatusResponse.class);

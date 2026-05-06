@@ -4,6 +4,7 @@ import com.marcos.javabeasts_javafx.socket.LobbyTcpClient;
 import com.marcos.javabeasts_javafx.socket.RoomStatusData;
 import com.marcos.javabeasts_javafx.socket.RoomStatusPlayer;
 import javafx.application.Application;
+import javafx.application.Platform;
 import javafx.geometry.Insets;
 import javafx.geometry.Pos;
 import javafx.scene.Scene;
@@ -17,15 +18,28 @@ import javafx.scene.text.Font;
 import javafx.scene.text.FontWeight;
 import javafx.stage.Stage;
 
+import java.util.concurrent.Executors;
+import java.util.concurrent.ScheduledExecutorService;
+import java.util.concurrent.TimeUnit;
+
 public class JavaBeastsLobbyApp extends Application {
 
     private static final String LOBBY_HOST = "127.0.0.1";
     private static final int LOBBY_PORT = 7878;
+    private static final long REFRESH_INTERVAL_SECONDS = 2;
+
+    private final LobbyTcpClient lobbyTcpClient = new LobbyTcpClient(LOBBY_HOST, LOBBY_PORT);
+    private final ScheduledExecutorService scheduler = Executors.newSingleThreadScheduledExecutor();
+
+    private Label roomCodeLabel;
+    private VBox playerOneCard;
+    private VBox playerTwoCard;
+    private Label matchStatusLabel;
+    private Label connectionLabel;
+    private HBox playersRow;
 
     @Override
     public void start(Stage stage) {
-        LobbyTcpClient lobbyTcpClient = new LobbyTcpClient(LOBBY_HOST, LOBBY_PORT);
-
         Label title = new Label("JavaBeasts");
         title.setFont(Font.font("System", FontWeight.BOLD, 32));
         title.setStyle("-fx-text-fill: #f3f4f6;");
@@ -34,34 +48,19 @@ public class JavaBeastsLobbyApp extends Application {
         subtitle.setFont(Font.font(18));
         subtitle.setStyle("-fx-text-fill: #cbd5e1;");
 
-        Label roomCodeLabel = new Label("Sala ----");
+        roomCodeLabel = new Label("Sala ----");
         roomCodeLabel.setFont(Font.font("System", FontWeight.SEMI_BOLD, 20));
         roomCodeLabel.setStyle("-fx-text-fill: #f8fafc;");
 
         VBox header = new VBox(8, title, subtitle, roomCodeLabel);
         header.setAlignment(Pos.CENTER_LEFT);
 
-        VBox playerOneCard;
-        VBox playerTwoCard;
-        Label matchStatusLabel;
-        Label connectionLabel;
+        playerOneCard = createUnavailableCard("Jugador 1");
+        playerTwoCard = createUnavailableCard("Jugador 2");
+        matchStatusLabel = createMatchStatusLabel(false);
+        connectionLabel = createConnectionLabel("Conectando con el lobby TCP...", "#fcd34d");
 
-        try {
-            RoomStatusData roomStatus = lobbyTcpClient.fetchRoomStatus();
-
-            roomCodeLabel.setText("Sala " + safeRoomCode(roomStatus));
-            playerOneCard = createPlayerCard("Jugador 1", roomStatus.getPlayerOne());
-            playerTwoCard = createPlayerCard("Jugador 2", roomStatus.getPlayerTwo());
-            matchStatusLabel = createMatchStatusLabel(roomStatus.isCanStart());
-            connectionLabel = createConnectionLabel("Conectado al lobby TCP", "#86efac");
-        } catch (Exception e) {
-            playerOneCard = createUnavailableCard("Jugador 1");
-            playerTwoCard = createUnavailableCard("Jugador 2");
-            matchStatusLabel = createMatchStatusLabel(false);
-            connectionLabel = createConnectionLabel("Sin conexion con el lobby TCP", "#fca5a5");
-        }
-
-        HBox playersRow = new HBox(24, playerOneCard, playerTwoCard);
+        playersRow = new HBox(24, playerOneCard, playerTwoCard);
         playersRow.setAlignment(Pos.CENTER);
 
         VBox footer = new VBox(12, matchStatusLabel, connectionLabel);
@@ -80,6 +79,64 @@ public class JavaBeastsLobbyApp extends Application {
         stage.setMinWidth(720);
         stage.setMinHeight(420);
         stage.show();
+
+        refreshLobbyState();
+        startPolling();
+    }
+
+    @Override
+    public void stop() {
+        scheduler.shutdownNow();
+    }
+
+    private void startPolling() {
+        scheduler.scheduleAtFixedRate(
+                this::refreshLobbyState,
+                REFRESH_INTERVAL_SECONDS,
+                REFRESH_INTERVAL_SECONDS,
+                TimeUnit.SECONDS
+        );
+    }
+
+    private void refreshLobbyState() {
+        try {
+            RoomStatusData roomStatus = lobbyTcpClient.fetchRoomStatus();
+            Platform.runLater(() -> applyRoomStatus(roomStatus));
+        } catch (Exception e) {
+            Platform.runLater(this::showDisconnectedState);
+        }
+    }
+
+    private void applyRoomStatus(RoomStatusData roomStatus) {
+        roomCodeLabel.setText("Sala " + safeRoomCode(roomStatus));
+        replacePlayerCards(
+                createPlayerCard("Jugador 1", roomStatus.getPlayerOne()),
+                createPlayerCard("Jugador 2", roomStatus.getPlayerTwo())
+        );
+        matchStatusLabel.setText(roomStatus.isCanStart()
+                ? "Partida lista"
+                : "Esperando a que ambos jugadores esten listos");
+        matchStatusLabel.setStyle("-fx-text-fill: " + (roomStatus.isCanStart() ? "#fcd34d" : "#cbd5e1") + ";");
+        connectionLabel.setText("Conectado al lobby TCP");
+        connectionLabel.setStyle("-fx-text-fill: #86efac;");
+    }
+
+    private void showDisconnectedState() {
+        roomCodeLabel.setText("Sala ----");
+        replacePlayerCards(
+                createUnavailableCard("Jugador 1"),
+                createUnavailableCard("Jugador 2")
+        );
+        matchStatusLabel.setText("Esperando a que ambos jugadores esten listos");
+        matchStatusLabel.setStyle("-fx-text-fill: #cbd5e1;");
+        connectionLabel.setText("Sin conexion con el lobby TCP");
+        connectionLabel.setStyle("-fx-text-fill: #fca5a5;");
+    }
+
+    private void replacePlayerCards(VBox newPlayerOneCard, VBox newPlayerTwoCard) {
+        playersRow.getChildren().setAll(newPlayerOneCard, newPlayerTwoCard);
+        playerOneCard = newPlayerOneCard;
+        playerTwoCard = newPlayerTwoCard;
     }
 
     private VBox createPlayerCard(String slotTitle, RoomStatusPlayer player) {
