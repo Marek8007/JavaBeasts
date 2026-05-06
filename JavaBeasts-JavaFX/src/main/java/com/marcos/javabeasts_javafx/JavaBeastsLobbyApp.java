@@ -32,11 +32,13 @@ public class JavaBeastsLobbyApp extends Application {
     private final ScheduledExecutorService scheduler = Executors.newSingleThreadScheduledExecutor();
 
     private Label roomCodeLabel;
+    private Label phaseLabel;
     private VBox playerOneCard;
     private VBox playerTwoCard;
     private Label matchStatusLabel;
     private Label connectionLabel;
     private HBox playersRow;
+    private boolean matchReady;
 
     @Override
     public void start(Stage stage) {
@@ -52,7 +54,11 @@ public class JavaBeastsLobbyApp extends Application {
         roomCodeLabel.setFont(Font.font("System", FontWeight.SEMI_BOLD, 20));
         roomCodeLabel.setStyle("-fx-text-fill: #f8fafc;");
 
-        VBox header = new VBox(8, title, subtitle, roomCodeLabel);
+        phaseLabel = new Label("Lobby activo");
+        phaseLabel.setFont(Font.font("System", FontWeight.BOLD, 18));
+        phaseLabel.setStyle("-fx-text-fill: #93c5fd;");
+
+        VBox header = new VBox(8, title, subtitle, roomCodeLabel, phaseLabel);
         header.setAlignment(Pos.CENTER_LEFT);
 
         playerOneCard = createUnavailableCard("Jugador 1");
@@ -113,16 +119,24 @@ public class JavaBeastsLobbyApp extends Application {
                 createPlayerCard("Jugador 1", roomStatus.getPlayerOne()),
                 createPlayerCard("Jugador 2", roomStatus.getPlayerTwo())
         );
-        matchStatusLabel.setText(roomStatus.isCanStart()
-                ? "Partida lista"
-                : "Esperando a que ambos jugadores esten listos");
-        matchStatusLabel.setStyle("-fx-text-fill: " + (roomStatus.isCanStart() ? "#fcd34d" : "#cbd5e1") + ";");
+        if (roomStatus.isCanStart()) {
+            handleMatchReady(roomStatus);
+        } else {
+            matchReady = false;
+            phaseLabel.setText("Lobby activo");
+            phaseLabel.setStyle("-fx-text-fill: #93c5fd;");
+            matchStatusLabel.setText("Esperando a que ambos jugadores esten listos");
+            matchStatusLabel.setStyle("-fx-text-fill: #cbd5e1;");
+        }
         connectionLabel.setText("Conectado al lobby TCP");
         connectionLabel.setStyle("-fx-text-fill: #86efac;");
     }
 
     private void showDisconnectedState() {
+        matchReady = false;
         roomCodeLabel.setText("Sala ----");
+        phaseLabel.setText("Lobby no disponible");
+        phaseLabel.setStyle("-fx-text-fill: #fca5a5;");
         replacePlayerCards(
                 createUnavailableCard("Jugador 1"),
                 createUnavailableCard("Jugador 2")
@@ -137,6 +151,17 @@ public class JavaBeastsLobbyApp extends Application {
         playersRow.getChildren().setAll(newPlayerOneCard, newPlayerTwoCard);
         playerOneCard = newPlayerOneCard;
         playerTwoCard = newPlayerTwoCard;
+    }
+
+    private void handleMatchReady(RoomStatusData roomStatus) {
+        if (!matchReady) {
+            matchReady = true;
+        }
+
+        phaseLabel.setText("Partida lista");
+        phaseLabel.setStyle("-fx-text-fill: #fcd34d;");
+        matchStatusLabel.setText("Preparando la transicion al combate");
+        matchStatusLabel.setStyle("-fx-text-fill: #fde68a;");
     }
 
     private VBox createPlayerCard(String slotTitle, RoomStatusPlayer player) {
