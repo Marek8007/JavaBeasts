@@ -39,9 +39,13 @@ public class JavaBeastsLobbyApp extends Application {
     private Label connectionLabel;
     private HBox playersRow;
     private boolean matchReady;
+    private boolean battleScreenShown;
+    private Stage primaryStage;
 
     @Override
     public void start(Stage stage) {
+        primaryStage = stage;
+
         Label title = new Label("JavaBeasts");
         title.setFont(Font.font("System", FontWeight.BOLD, 32));
         title.setStyle("-fx-text-fill: #f3f4f6;");
@@ -105,6 +109,10 @@ public class JavaBeastsLobbyApp extends Application {
     }
 
     private void refreshLobbyState() {
+        if (battleScreenShown) {
+            return;
+        }
+
         try {
             RoomStatusData roomStatus = lobbyTcpClient.fetchRoomStatus();
             Platform.runLater(() -> applyRoomStatus(roomStatus));
@@ -133,6 +141,10 @@ public class JavaBeastsLobbyApp extends Application {
     }
 
     private void showDisconnectedState() {
+        if (battleScreenShown) {
+            return;
+        }
+
         matchReady = false;
         roomCodeLabel.setText("Sala ----");
         phaseLabel.setText("Lobby no disponible");
@@ -162,6 +174,18 @@ public class JavaBeastsLobbyApp extends Application {
         phaseLabel.setStyle("-fx-text-fill: #fcd34d;");
         matchStatusLabel.setText("Preparando la transicion al combate");
         matchStatusLabel.setStyle("-fx-text-fill: #fde68a;");
+
+        if (!battleScreenShown) {
+            battleScreenShown = true;
+            scheduler.shutdownNow();
+            showBattleScreen(roomStatus);
+        }
+    }
+
+    private void showBattleScreen(RoomStatusData roomStatus) {
+        Scene battleScene = BattleScreenFactory.createBattleScene(roomStatus);
+        primaryStage.setScene(battleScene);
+        primaryStage.setTitle("JavaBeasts - Combate");
     }
 
     private VBox createPlayerCard(String slotTitle, RoomStatusPlayer player) {
