@@ -24,11 +24,11 @@ import java.util.concurrent.TimeUnit;
 
 public class JavaBeastsLobbyApp extends Application {
 
-    private static final String LOBBY_HOST = "127.0.0.1";
-    private static final int LOBBY_PORT = 7878;
+    private static final String DEFAULT_LOBBY_HOST = "127.0.0.1";
+    private static final int DEFAULT_LOBBY_PORT = 7878;
     private static final long REFRESH_INTERVAL_SECONDS = 2;
 
-    private final LobbyTcpClient lobbyTcpClient = new LobbyTcpClient(LOBBY_HOST, LOBBY_PORT);
+    private final LobbyTcpClient lobbyTcpClient = new LobbyTcpClient(resolveLobbyHost(), resolveLobbyPort());
     private final ScheduledExecutorService scheduler = Executors.newSingleThreadScheduledExecutor();
 
     private Label roomCodeLabel;
@@ -224,6 +224,20 @@ public class JavaBeastsLobbyApp extends Application {
     private String safeRoomCode(RoomStatusData roomStatus) {
         String roomCode = roomStatus.getRoomCode();
         return roomCode == null || roomCode.isBlank() ? "----" : roomCode;
+    }
+
+    private static String resolveLobbyHost() {
+        return System.getProperty("javabeasts.lobby.host", DEFAULT_LOBBY_HOST);
+    }
+
+    private static int resolveLobbyPort() {
+        String configuredPort = System.getProperty("javabeasts.lobby.port", String.valueOf(DEFAULT_LOBBY_PORT));
+
+        try {
+            return Integer.parseInt(configuredPort);
+        } catch (NumberFormatException e) {
+            return DEFAULT_LOBBY_PORT;
+        }
     }
 
     public static void main(String[] args) {
