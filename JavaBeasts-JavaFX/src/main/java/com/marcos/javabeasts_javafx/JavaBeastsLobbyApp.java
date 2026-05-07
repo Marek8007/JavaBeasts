@@ -1,5 +1,7 @@
 package com.marcos.javabeasts_javafx;
 
+import com.marcos.javabeasts_javafx.battle.BattleSnapshotClient;
+import com.marcos.javabeasts_javafx.battle.BattleSnapshotData;
 import com.marcos.javabeasts_javafx.socket.LobbyTcpClient;
 import com.marcos.javabeasts_javafx.socket.RoomStatusData;
 import com.marcos.javabeasts_javafx.socket.RoomStatusPlayer;
@@ -18,6 +20,7 @@ import javafx.scene.text.Font;
 import javafx.scene.text.FontWeight;
 import javafx.stage.Stage;
 
+import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
@@ -26,9 +29,11 @@ public class JavaBeastsLobbyApp extends Application {
 
     private static final String DEFAULT_LOBBY_HOST = "127.0.0.1";
     private static final int DEFAULT_LOBBY_PORT = 7878;
+    private static final int DEFAULT_BACKEND_PORT = 9234;
     private static final long REFRESH_INTERVAL_SECONDS = 2;
 
     private final LobbyTcpClient lobbyTcpClient = new LobbyTcpClient(resolveLobbyHost(), resolveLobbyPort());
+    private final BattleSnapshotClient battleSnapshotClient = new BattleSnapshotClient(resolveBackendHost(), resolveBackendPort());
     private final ScheduledExecutorService scheduler = Executors.newSingleThreadScheduledExecutor();
 
     private Label roomCodeLabel;
@@ -178,11 +183,35 @@ public class JavaBeastsLobbyApp extends Application {
         if (!battleScreenShown) {
             battleScreenShown = true;
             scheduler.shutdownNow();
-            showBattleScreen(roomStatus);
+            loadAndShowBattleScreen(roomStatus);
         }
     }
 
-    private void showBattleScreen(RoomStatusData roomStatus) {
+    private void loadAndShowBattleScreen(RoomStatusData roomStatus) {
+        CompletableFuture
+                .supplyAsync(() -> fetchBattleSnapshot(roomStatus))
+                .thenAccept(snapshot -> Platform.runLater(() -> showBattleScreen(snapshot)))
+                .exceptionally(exception -> {
+                    Platform.runLater(() -> showFallbackBattleScreen(roomStatus));
+                    return null;
+                });
+    }
+
+    private BattleSnapshotData fetchBattleSnapshot(RoomStatusData roomStatus) {
+        try {
+            return battleSnapshotClient.fetchInitialSnapshot(safeRoomCode(roomStatus));
+        } catch (Exception e) {
+            throw new IllegalStateException("No se pudo cargar el snapshot inicial del combate", e);
+        }
+    }
+
+    private void showBattleScreen(BattleSnapshotData snapshot) {
+        Scene battleScene = BattleScreenFactory.createBattleScene(snapshot);
+        primaryStage.setScene(battleScene);
+        primaryStage.setTitle("JavaBeasts - Combate");
+    }
+
+    private void showFallbackBattleScreen(RoomStatusData roomStatus) {
         Scene battleScene = BattleScreenFactory.createBattleScene(roomStatus);
         primaryStage.setScene(battleScene);
         primaryStage.setTitle("JavaBeasts - Combate");
@@ -286,6 +315,20 @@ public class JavaBeastsLobbyApp extends Application {
             return Integer.parseInt(configuredPort);
         } catch (NumberFormatException e) {
             return DEFAULT_LOBBY_PORT;
+        }
+    }
+
+    private static String resolveBackendHost() {
+        return System.getProperty("javabeasts.backend.host", resolveLobbyHost());
+    }
+
+    private static int resolveBackendPort() {
+        String configuredPort = System.getProperty("javabeasts.backend.port", String.valueOf(DEFAULT_BACKEND_PORT));
+
+        try {
+            return Integer.parseInt(configuredPort);
+        } catch (NumberFormatException e) {
+            return DEFAULT_BACKEND_PORT;
         }
     }
 
