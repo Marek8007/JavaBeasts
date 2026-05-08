@@ -44,6 +44,7 @@ public class JavaBeastsLobbyApp extends Application {
     private HBox playersRow;
     private boolean matchReady;
     private boolean battleScreenShown;
+    private String currentBattleRoomCode;
     private Stage primaryStage;
 
     @Override
@@ -114,6 +115,7 @@ public class JavaBeastsLobbyApp extends Application {
 
     private void refreshLobbyState() {
         if (battleScreenShown) {
+            refreshBattleState();
             return;
         }
 
@@ -187,6 +189,7 @@ public class JavaBeastsLobbyApp extends Application {
     }
 
     private void loadAndShowBattleScreen(RoomStatusData roomStatus) {
+        currentBattleRoomCode = safeRoomCode(roomStatus);
         CompletableFuture
                 .supplyAsync(() -> fetchBattleSnapshot(roomStatus))
                 .thenAccept(snapshot -> Platform.runLater(() -> showBattleScreen(snapshot)))
@@ -201,6 +204,19 @@ public class JavaBeastsLobbyApp extends Application {
             return battleTcpClient.fetchInitialSnapshot(safeRoomCode(roomStatus));
         } catch (Exception e) {
             throw new IllegalStateException("No se pudo cargar el snapshot inicial del combate", e);
+        }
+    }
+
+    private void refreshBattleState() {
+        if (currentBattleRoomCode == null || currentBattleRoomCode.isBlank()) {
+            return;
+        }
+
+        try {
+            BattleSnapshotData snapshot = battleTcpClient.fetchInitialSnapshot(currentBattleRoomCode);
+            Platform.runLater(() -> showBattleScreen(snapshot));
+        } catch (Exception ignored) {
+            // Keep the last visible battle state and let the next polling cycle try again.
         }
     }
 

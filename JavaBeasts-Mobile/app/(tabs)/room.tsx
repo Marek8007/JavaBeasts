@@ -44,6 +44,7 @@ export default function RoomJoinScreen() {
   const [battleLoading, setBattleLoading] = useState(false);
   const [actionLoading, setActionLoading] = useState(false);
   const [actionState, setActionState] = useState<BattleActionSubmissionResponse | null>(null);
+  const [battleMessage, setBattleMessage] = useState('');
   const [error, setError] = useState('');
   const currentPlayer = [roomStatus?.playerOne, roomStatus?.playerTwo].find(
     (slot) => slot?.username === user?.username
@@ -119,13 +120,16 @@ export default function RoomJoinScreen() {
     if (!roomStatus?.canStart) {
       setBattleSnapshot(null);
       setActionState(null);
+      setBattleMessage('');
       return;
     }
 
     let mounted = true;
 
     const loadBattleSnapshot = async () => {
-      setBattleLoading(true);
+      if (!battleSnapshot) {
+        setBattleLoading(true);
+      }
 
       try {
         const snapshot = await getBattleSnapshotAction(roomStatus.roomCode);
@@ -133,6 +137,13 @@ export default function RoomJoinScreen() {
           return;
         }
         setBattleSnapshot(snapshot);
+        setActionState((currentActionState) => {
+          if (!currentActionState) {
+            return currentActionState;
+          }
+
+          return currentActionState.turnNumber < snapshot.turnNumber ? null : currentActionState;
+        });
       } catch (requestError: any) {
         if (!mounted) {
           return;
@@ -147,10 +158,15 @@ export default function RoomJoinScreen() {
 
     void loadBattleSnapshot();
 
+    const intervalId = setInterval(() => {
+      void loadBattleSnapshot();
+    }, ROOM_STATUS_REFRESH_MS);
+
     return () => {
       mounted = false;
+      clearInterval(intervalId);
     };
-  }, [roomStatus?.canStart, roomStatus?.roomCode]);
+  }, [battleSnapshot, roomStatus?.canStart, roomStatus?.roomCode]);
 
   function updateRoomCode(value: string) {
     if (joined) {
@@ -255,6 +271,8 @@ export default function RoomJoinScreen() {
     try {
       const response = await submitBattleActionAction(roomStatus.roomCode, user.username, 'ATTACK', moveSlot);
       setActionState(response);
+      setBattleSnapshot(response.snapshot);
+      setBattleMessage(response.message);
     } catch (requestError: any) {
       setError(requestError?.message ? String(requestError.message) : 'No se pudo enviar la accion.');
     } finally {
@@ -273,6 +291,8 @@ export default function RoomJoinScreen() {
     try {
       const response = await submitBattleActionAction(roomStatus.roomCode, user.username, 'SWITCH', undefined, switchSlot);
       setActionState(response);
+      setBattleSnapshot(response.snapshot);
+      setBattleMessage(response.message);
     } catch (requestError: any) {
       setError(requestError?.message ? String(requestError.message) : 'No se pudo enviar el cambio.');
     } finally {
@@ -455,11 +475,13 @@ export default function RoomJoinScreen() {
 
                         <View className="rounded-lg bg-white px-3 py-3">
                           <Text className="text-sm font-semibold text-beasts-muted">
-                            {currentPlayerActionSubmitted
-                              ? actionState?.turnReadyToResolve
-                                ? 'Ambos jugadores han enviado accion.'
-                                : 'Accion enviada. Esperando al rival.'
-                              : 'Elige una accion para este turno.'}
+                            {battleMessage
+                              ? battleMessage
+                              : currentPlayerActionSubmitted
+                                ? actionState?.turnReadyToResolve
+                                  ? 'Ambos jugadores han enviado accion.'
+                                  : 'Accion enviada. Esperando al rival.'
+                                : 'Elige una accion para este turno.'}
                           </Text>
                         </View>
                       </View>

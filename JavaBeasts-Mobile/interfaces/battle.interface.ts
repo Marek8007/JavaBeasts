@@ -32,4 +32,7 @@ export interface BattleActionSubmissionResponse {
   playerOneActionSubmitted: boolean;
   playerTwoActionSubmitted: boolean;
   turnReadyToResolve: boolean;
+  turnResolved: boolean;
+  message: string;
+  snapshot: BattleSnapshotResponse;
 }
