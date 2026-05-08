@@ -95,7 +95,7 @@ public class LobbyClientHandler implements Runnable {
                     )
             );
             case SocketCodes.BATTLE_SNAPSHOT -> successResponse(
-                    battleSetupService.buildInitialSnapshot(requiredString(data, "roomCode"))
+                    battleSessionService.getCurrentSnapshot(requiredString(data, "roomCode"))
             );
             case SocketCodes.SUBMIT_ACTION -> successResponse(
                     battleSessionService.submitAction(new BattleActionRequest(

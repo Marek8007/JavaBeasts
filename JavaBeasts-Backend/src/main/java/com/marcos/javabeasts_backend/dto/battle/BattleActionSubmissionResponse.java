@@ -5,6 +5,9 @@ public record BattleActionSubmissionResponse(
         Integer turnNumber,
         boolean playerOneActionSubmitted,
         boolean playerTwoActionSubmitted,
-        boolean turnReadyToResolve
+        boolean turnReadyToResolve,
+        boolean turnResolved,
+        String message,
+        BattleSnapshotResponse snapshot
 ) {
 }

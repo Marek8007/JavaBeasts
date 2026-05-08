@@ -5,19 +5,21 @@ import com.marcos.javabeasts_backend.dto.battle.BattleSnapshotResponse;
 public class BattleSession {
 
     private final String roomCode;
-    private final int turnNumber;
     private final String playerOneUsername;
     private final String playerTwoUsername;
-    private final BattleSnapshotResponse initialSnapshot;
+    private int turnNumber;
+    private BattleSnapshotResponse currentSnapshot;
     private BattleTurnAction playerOneAction;
     private BattleTurnAction playerTwoAction;
+    private String lastResolutionMessage;
 
     public BattleSession(BattleSnapshotResponse initialSnapshot) {
         this.roomCode = initialSnapshot.roomCode();
         this.turnNumber = initialSnapshot.turnNumber();
         this.playerOneUsername = initialSnapshot.playerOne().username();
         this.playerTwoUsername = initialSnapshot.playerTwo().username();
-        this.initialSnapshot = initialSnapshot;
+        this.currentSnapshot = initialSnapshot;
+        this.lastResolutionMessage = "Combate inicializado";
     }
 
     public String getRoomCode() {
@@ -28,8 +30,12 @@ public class BattleSession {
         return turnNumber;
     }
 
-    public BattleSnapshotResponse getInitialSnapshot() {
-        return initialSnapshot;
+    public BattleSnapshotResponse getCurrentSnapshot() {
+        return currentSnapshot;
+    }
+
+    public String getLastResolutionMessage() {
+        return lastResolutionMessage;
     }
 
     public boolean containsPlayer(String username) {
@@ -60,5 +66,24 @@ public class BattleSession {
 
     public boolean isTurnReadyToResolve() {
         return isPlayerOneActionSubmitted() && isPlayerTwoActionSubmitted();
+    }
+
+    public BattleTurnAction getPlayerOneAction() {
+        return playerOneAction;
+    }
+
+    public BattleTurnAction getPlayerTwoAction() {
+        return playerTwoAction;
+    }
+
+    public void updateSnapshot(BattleSnapshotResponse currentSnapshot) {
+        this.currentSnapshot = currentSnapshot;
+    }
+
+    public void completeTurn(String resolutionMessage) {
+        this.turnNumber++;
+        this.lastResolutionMessage = resolutionMessage;
+        this.playerOneAction = null;
+        this.playerTwoAction = null;
     }
 }
