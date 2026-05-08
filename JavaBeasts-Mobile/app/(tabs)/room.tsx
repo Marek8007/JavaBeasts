@@ -1,9 +1,14 @@
+import { getBattleSnapshotAction, submitBattleActionAction } from '@/actions/battle.actions';
 import {
   getRoomStatusAction,
   joinRoomAction,
   leaveRoomAction,
   setReadyAction,
 } from '@/actions/lobby-socket.actions';
+import {
+  BattleActionSubmissionResponse,
+  BattleSnapshotResponse,
+} from '@/interfaces/battle.interface';
 import { getTeamsByUserAction } from '@/actions/team.actions';
 import { TeamResponse } from '@/interfaces/team.interface';
 import { useAuthStore } from '@/stores/authStore';
@@ -35,12 +40,23 @@ export default function RoomJoinScreen() {
   const [settingReady, setSettingReady] = useState(false);
   const [teamsLoading, setTeamsLoading] = useState(false);
   const [activeTeam, setActiveTeam] = useState<TeamResponse | null>(null);
+  const [battleSnapshot, setBattleSnapshot] = useState<BattleSnapshotResponse | null>(null);
+  const [battleLoading, setBattleLoading] = useState(false);
+  const [actionLoading, setActionLoading] = useState(false);
+  const [actionState, setActionState] = useState<BattleActionSubmissionResponse | null>(null);
   const [error, setError] = useState('');
   const currentPlayer = [roomStatus?.playerOne, roomStatus?.playerTwo].find(
     (slot) => slot?.username === user?.username
   );
   const ready = Boolean(currentPlayer?.ready);
   const joined = Boolean(roomStatus);
+  const isCombatReady = Boolean(roomStatus?.canStart);
+  const isPlayerOne = user?.username === roomStatus?.playerOne?.username;
+  const currentPlayerActionSubmitted = actionState
+    ? isPlayerOne
+      ? actionState.playerOneActionSubmitted
+      : actionState.playerTwoActionSubmitted
+    : false;
 
   const loadActiveTeam = useCallback(async () => {
     if (!user) {
@@ -68,6 +84,8 @@ export default function RoomJoinScreen() {
 
   useEffect(() => {
     if (!roomStatus) {
+      setBattleSnapshot(null);
+      setActionState(null);
       return;
     }
 
@@ -96,6 +114,43 @@ export default function RoomJoinScreen() {
       clearInterval(intervalId);
     };
   }, [roomStatus, setRoomStatus]);
+
+  useEffect(() => {
+    if (!roomStatus?.canStart) {
+      setBattleSnapshot(null);
+      setActionState(null);
+      return;
+    }
+
+    let mounted = true;
+
+    const loadBattleSnapshot = async () => {
+      setBattleLoading(true);
+
+      try {
+        const snapshot = await getBattleSnapshotAction(roomStatus.roomCode);
+        if (!mounted) {
+          return;
+        }
+        setBattleSnapshot(snapshot);
+      } catch (requestError: any) {
+        if (!mounted) {
+          return;
+        }
+        setError(requestError?.message ? String(requestError.message) : 'No se pudo cargar el combate.');
+      } finally {
+        if (mounted) {
+          setBattleLoading(false);
+        }
+      }
+    };
+
+    void loadBattleSnapshot();
+
+    return () => {
+      mounted = false;
+    };
+  }, [roomStatus?.canStart, roomStatus?.roomCode]);
 
   function updateRoomCode(value: string) {
     if (joined) {
@@ -186,6 +241,42 @@ export default function RoomJoinScreen() {
       setError(requestError?.message ? String(requestError.message) : 'No se pudo cambiar el estado de listo.');
     } finally {
       setSettingReady(false);
+    }
+  }
+
+  async function submitAttack(moveSlot: number) {
+    if (!user || !roomStatus || actionLoading || currentPlayerActionSubmitted) {
+      return;
+    }
+
+    setActionLoading(true);
+    setError('');
+
+    try {
+      const response = await submitBattleActionAction(roomStatus.roomCode, user.username, 'ATTACK', moveSlot);
+      setActionState(response);
+    } catch (requestError: any) {
+      setError(requestError?.message ? String(requestError.message) : 'No se pudo enviar la accion.');
+    } finally {
+      setActionLoading(false);
+    }
+  }
+
+  async function submitSwitch(switchSlot: number) {
+    if (!user || !roomStatus || actionLoading || currentPlayerActionSubmitted) {
+      return;
+    }
+
+    setActionLoading(true);
+    setError('');
+
+    try {
+      const response = await submitBattleActionAction(roomStatus.roomCode, user.username, 'SWITCH', undefined, switchSlot);
+      setActionState(response);
+    } catch (requestError: any) {
+      setError(requestError?.message ? String(requestError.message) : 'No se pudo enviar el cambio.');
+    } finally {
+      setActionLoading(false);
     }
   }
 
@@ -291,39 +382,130 @@ export default function RoomJoinScreen() {
                     username={roomStatus.playerTwo?.username}
                   />
                 </View>
-                <Pressable
-                  className={`min-h-11 flex-row items-center justify-center gap-2 rounded-lg px-4 active:opacity-80 ${
-                    ready ? 'bg-[#15803d]' : 'border border-[#15803d] bg-white'
-                  } ${settingReady || (!ready && !activeTeam) ? 'opacity-45' : ''}`}
-                  disabled={settingReady || (!ready && !activeTeam)}
-                  onPress={() => void toggleReady()}>
-                  {settingReady ? (
-                    <ActivityIndicator color={ready ? '#ffffff' : '#15803d'} />
-                  ) : (
-                    <>
-                      <Ionicons
-                        name={ready ? 'checkmark-circle' : 'checkmark-circle-outline'}
-                        size={20}
-                        color={ready ? '#ffffff' : '#15803d'}
-                      />
-                      <Text className={`text-sm font-extrabold ${ready ? 'text-white' : 'text-[#15803d]'}`}>
-                        {ready ? 'Listo' : 'Marcar listo'}
+                {isCombatReady ? (
+                  <View className="gap-3 rounded-lg border border-[#dbeafe] bg-[#eff6ff] p-3">
+                    <View className="flex-row items-center gap-2">
+                      <Ionicons name="flash-outline" size={20} color="#1d4ed8" />
+                      <Text className="text-base font-extrabold text-[#1d4ed8]">Combate en curso</Text>
+                    </View>
+
+                    {battleLoading ? (
+                      <View className="py-4">
+                        <ActivityIndicator color="#1d4ed8" />
+                      </View>
+                    ) : battleSnapshot ? (
+                      <View className="gap-3">
+                        <View className="rounded-lg bg-white px-3 py-3">
+                          <Text className="text-xs font-extrabold uppercase text-beasts-muted">Turno</Text>
+                          <Text className="mt-1 text-lg font-extrabold text-beasts-ink">
+                            {battleSnapshot.turnNumber}
+                          </Text>
+                        </View>
+
+                        <BattlePlayerCard
+                          label="Jugador 1"
+                          activeJaBea={battleSnapshot.playerOne.activeJaBea}
+                          teamName={battleSnapshot.playerOne.teamName}
+                          username={battleSnapshot.playerOne.username}
+                        />
+                        <BattlePlayerCard
+                          label="Jugador 2"
+                          activeJaBea={battleSnapshot.playerTwo.activeJaBea}
+                          teamName={battleSnapshot.playerTwo.teamName}
+                          username={battleSnapshot.playerTwo.username}
+                        />
+
+                        <View className="gap-2">
+                          <Text className="text-sm font-extrabold text-beasts-ink">Ataques</Text>
+                          <View className="flex-row gap-2">
+                            {[0, 1, 2].map((moveSlot) => (
+                              <Pressable
+                                key={`attack-${moveSlot}`}
+                                className={`flex-1 rounded-lg border border-[#1d4ed8] bg-white px-3 py-3 active:opacity-80 ${
+                                  actionLoading || currentPlayerActionSubmitted ? 'opacity-45' : ''
+                                }`}
+                                disabled={actionLoading || currentPlayerActionSubmitted}
+                                onPress={() => void submitAttack(moveSlot)}>
+                                <Text className="text-center text-sm font-extrabold text-[#1d4ed8]">
+                                  Ataque {moveSlot + 1}
+                                </Text>
+                              </Pressable>
+                            ))}
+                          </View>
+                        </View>
+
+                        <View className="gap-2">
+                          <Text className="text-sm font-extrabold text-beasts-ink">Cambiar JaBea</Text>
+                          <View className="flex-row flex-wrap gap-2">
+                            {[1, 2, 3, 4].map((switchSlot) => (
+                              <Pressable
+                                key={`switch-${switchSlot}`}
+                                className={`min-w-[72px] rounded-lg border border-[#7c3aed] bg-white px-3 py-3 active:opacity-80 ${
+                                  actionLoading || currentPlayerActionSubmitted ? 'opacity-45' : ''
+                                }`}
+                                disabled={actionLoading || currentPlayerActionSubmitted}
+                                onPress={() => void submitSwitch(switchSlot)}>
+                                <Text className="text-center text-sm font-extrabold text-[#7c3aed]">
+                                  Slot {switchSlot}
+                                </Text>
+                              </Pressable>
+                            ))}
+                          </View>
+                        </View>
+
+                        <View className="rounded-lg bg-white px-3 py-3">
+                          <Text className="text-sm font-semibold text-beasts-muted">
+                            {currentPlayerActionSubmitted
+                              ? actionState?.turnReadyToResolve
+                                ? 'Ambos jugadores han enviado accion.'
+                                : 'Accion enviada. Esperando al rival.'
+                              : 'Elige una accion para este turno.'}
+                          </Text>
+                        </View>
+                      </View>
+                    ) : (
+                      <Text className="text-sm font-semibold text-beasts-muted">
+                        Esperando a cargar el estado inicial del combate.
                       </Text>
-                    </>
-                  )}
-                </Pressable>
-                <Pressable
-                  className={`min-h-11 items-center justify-center rounded-lg border border-[#bb3e03] bg-white px-4 active:opacity-80 ${
-                    leaving || ready ? 'opacity-45' : ''
-                  }`}
-                  disabled={leaving || ready}
-                  onPress={() => void leaveRoom()}>
-                  {leaving ? (
-                    <ActivityIndicator color="#bb3e03" />
-                  ) : (
-                    <Text className="text-sm font-extrabold text-[#bb3e03]">Salir de la sala</Text>
-                  )}
-                </Pressable>
+                    )}
+                  </View>
+                ) : (
+                  <>
+                    <Pressable
+                      className={`min-h-11 flex-row items-center justify-center gap-2 rounded-lg px-4 active:opacity-80 ${
+                        ready ? 'bg-[#15803d]' : 'border border-[#15803d] bg-white'
+                      } ${settingReady || (!ready && !activeTeam) ? 'opacity-45' : ''}`}
+                      disabled={settingReady || (!ready && !activeTeam)}
+                      onPress={() => void toggleReady()}>
+                      {settingReady ? (
+                        <ActivityIndicator color={ready ? '#ffffff' : '#15803d'} />
+                      ) : (
+                        <>
+                          <Ionicons
+                            name={ready ? 'checkmark-circle' : 'checkmark-circle-outline'}
+                            size={20}
+                            color={ready ? '#ffffff' : '#15803d'}
+                          />
+                          <Text className={`text-sm font-extrabold ${ready ? 'text-white' : 'text-[#15803d]'}`}>
+                            {ready ? 'Listo' : 'Marcar listo'}
+                          </Text>
+                        </>
+                      )}
+                    </Pressable>
+                    <Pressable
+                      className={`min-h-11 items-center justify-center rounded-lg border border-[#bb3e03] bg-white px-4 active:opacity-80 ${
+                        leaving || ready ? 'opacity-45' : ''
+                      }`}
+                      disabled={leaving || ready}
+                      onPress={() => void leaveRoom()}>
+                      {leaving ? (
+                        <ActivityIndicator color="#bb3e03" />
+                      ) : (
+                        <Text className="text-sm font-extrabold text-[#bb3e03]">Salir de la sala</Text>
+                      )}
+                    </Pressable>
+                  </>
+                )}
               </View>
             ) : null}
 
@@ -343,6 +525,30 @@ export default function RoomJoinScreen() {
         </View>
       </KeyboardAvoidingView>
     </SafeAreaView>
+  );
+}
+
+function BattlePlayerCard({
+  label,
+  username,
+  teamName,
+  activeJaBea,
+}: {
+  label: string;
+  username: string;
+  teamName: string;
+  activeJaBea: BattleSnapshotResponse['playerOne']['activeJaBea'];
+}) {
+  return (
+    <View className="rounded-lg bg-white px-3 py-3">
+      <Text className="text-xs font-extrabold uppercase text-beasts-muted">{label}</Text>
+      <Text className="mt-1 text-base font-extrabold text-beasts-ink">{username}</Text>
+      <Text className="mt-1 text-sm font-semibold text-beasts-muted">Equipo: {teamName}</Text>
+      <Text className="mt-2 text-sm font-extrabold text-beasts-ink">JaBea: {activeJaBea.name}</Text>
+      <Text className="mt-1 text-sm font-semibold text-[#15803d]">
+        Vida: {activeJaBea.currentHealth} / {activeJaBea.maxHealth}
+      </Text>
+    </View>
   );
 }
 
