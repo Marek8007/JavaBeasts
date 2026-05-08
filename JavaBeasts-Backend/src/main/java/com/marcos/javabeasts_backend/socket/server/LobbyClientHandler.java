@@ -2,11 +2,13 @@ package com.marcos.javabeasts_backend.socket.server;
 
 import com.google.gson.Gson;
 import com.google.gson.JsonObject;
+import com.marcos.javabeasts_backend.dto.battle.BattleActionRequest;
+import com.marcos.javabeasts_backend.services.battle.BattleSessionService;
+import com.marcos.javabeasts_backend.services.battle.BattleSetupService;
 import com.marcos.javabeasts_backend.socket.SocketCodes;
 import com.marcos.javabeasts_backend.socket.dto.SocketRequest;
 import com.marcos.javabeasts_backend.socket.dto.SocketResponse;
 import com.marcos.javabeasts_backend.socket.lobby.LobbyRoomService;
-import com.marcos.javabeasts_backend.socket.lobby.dto.RoomStatusPayload;
 import org.springframework.web.server.ResponseStatusException;
 
 import java.io.BufferedReader;
@@ -19,11 +21,21 @@ public class LobbyClientHandler implements Runnable {
 
     private final Socket socket;
     private final LobbyRoomService lobbyRoomService;
+    private final BattleSetupService battleSetupService;
+    private final BattleSessionService battleSessionService;
     private final Gson gson;
 
-    public LobbyClientHandler(Socket socket, LobbyRoomService lobbyRoomService, Gson gson) {
+    public LobbyClientHandler(
+            Socket socket,
+            LobbyRoomService lobbyRoomService,
+            BattleSetupService battleSetupService,
+            BattleSessionService battleSessionService,
+            Gson gson
+    ) {
         this.socket = socket;
         this.lobbyRoomService = lobbyRoomService;
+        this.battleSetupService = battleSetupService;
+        this.battleSessionService = battleSessionService;
         this.gson = gson;
     }
 
@@ -82,11 +94,23 @@ public class LobbyClientHandler implements Runnable {
                             requiredBoolean(data, "ready")
                     )
             );
+            case SocketCodes.BATTLE_SNAPSHOT -> successResponse(
+                    battleSetupService.buildInitialSnapshot(requiredString(data, "roomCode"))
+            );
+            case SocketCodes.SUBMIT_ACTION -> successResponse(
+                    battleSessionService.submitAction(new BattleActionRequest(
+                            requiredString(data, "roomCode"),
+                            requiredString(data, "username"),
+                            requiredString(data, "actionType"),
+                            optionalInteger(data, "moveSlot"),
+                            optionalInteger(data, "switchSlot")
+                    ))
+            );
             default -> errorResponse("Codigo de operacion no soportado");
         };
     }
 
-    private SocketResponse successResponse(RoomStatusPayload payload) {
+    private SocketResponse successResponse(Object payload) {
         return new SocketResponse("success", gson.toJsonTree(payload).getAsJsonObject());
     }
 
@@ -115,6 +139,14 @@ public class LobbyClientHandler implements Runnable {
         }
 
         return data.get(field).getAsBoolean();
+    }
+
+    private Integer optionalInteger(JsonObject data, String field) {
+        if (!data.has(field) || data.get(field).isJsonNull()) {
+            return null;
+        }
+
+        return data.get(field).getAsInt();
     }
 
     private void writeBestEffortError(String message) {

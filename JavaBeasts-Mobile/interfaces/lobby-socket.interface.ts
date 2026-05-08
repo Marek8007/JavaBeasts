@@ -3,6 +3,8 @@ export const LOBBY_SOCKET_CODES = {
   JOIN_ROOM: 'join_room',
   LEAVE_ROOM: 'leave_room',
   SET_READY: 'set_ready',
+  BATTLE_SNAPSHOT: 'battle_snapshot',
+  SUBMIT_ACTION: 'submit_action',
 } as const;
 
 export type LobbySocketCode = (typeof LOBBY_SOCKET_CODES)[keyof typeof LOBBY_SOCKET_CODES];

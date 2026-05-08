@@ -1,6 +1,6 @@
 package com.marcos.javabeasts_javafx;
 
-import com.marcos.javabeasts_javafx.battle.BattleSnapshotClient;
+import com.marcos.javabeasts_javafx.battle.BattleTcpClient;
 import com.marcos.javabeasts_javafx.battle.BattleSnapshotData;
 import com.marcos.javabeasts_javafx.socket.LobbyTcpClient;
 import com.marcos.javabeasts_javafx.socket.RoomStatusData;
@@ -29,11 +29,10 @@ public class JavaBeastsLobbyApp extends Application {
 
     private static final String DEFAULT_LOBBY_HOST = "127.0.0.1";
     private static final int DEFAULT_LOBBY_PORT = 7878;
-    private static final int DEFAULT_BACKEND_PORT = 9234;
     private static final long REFRESH_INTERVAL_SECONDS = 2;
 
     private final LobbyTcpClient lobbyTcpClient = new LobbyTcpClient(resolveLobbyHost(), resolveLobbyPort());
-    private final BattleSnapshotClient battleSnapshotClient = new BattleSnapshotClient(resolveBackendHost(), resolveBackendPort());
+    private final BattleTcpClient battleTcpClient = new BattleTcpClient(resolveLobbyHost(), resolveLobbyPort());
     private final ScheduledExecutorService scheduler = Executors.newSingleThreadScheduledExecutor();
 
     private Label roomCodeLabel;
@@ -199,7 +198,7 @@ public class JavaBeastsLobbyApp extends Application {
 
     private BattleSnapshotData fetchBattleSnapshot(RoomStatusData roomStatus) {
         try {
-            return battleSnapshotClient.fetchInitialSnapshot(safeRoomCode(roomStatus));
+            return battleTcpClient.fetchInitialSnapshot(safeRoomCode(roomStatus));
         } catch (Exception e) {
             throw new IllegalStateException("No se pudo cargar el snapshot inicial del combate", e);
         }
@@ -315,20 +314,6 @@ public class JavaBeastsLobbyApp extends Application {
             return Integer.parseInt(configuredPort);
         } catch (NumberFormatException e) {
             return DEFAULT_LOBBY_PORT;
-        }
-    }
-
-    private static String resolveBackendHost() {
-        return System.getProperty("javabeasts.backend.host", resolveLobbyHost());
-    }
-
-    private static int resolveBackendPort() {
-        String configuredPort = System.getProperty("javabeasts.backend.port", String.valueOf(DEFAULT_BACKEND_PORT));
-
-        try {
-            return Integer.parseInt(configuredPort);
-        } catch (NumberFormatException e) {
-            return DEFAULT_BACKEND_PORT;
         }
     }
 

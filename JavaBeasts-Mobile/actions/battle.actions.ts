@@ -3,12 +3,14 @@ import {
   BattleActionType,
   BattleSnapshotResponse,
 } from '@/interfaces/battle.interface';
+import { LOBBY_SOCKET_CODES } from '@/interfaces/lobby-socket.interface';
 
-import { javabeastsApi } from './api';
+import { sendLobbyRequest } from './lobby-socket.actions';
 
 export const getBattleSnapshotAction = async (roomCode: string): Promise<BattleSnapshotResponse> => {
-  const { data } = await javabeastsApi.get<BattleSnapshotResponse>(`/battle/snapshot?roomCode=${roomCode}`);
-  return data;
+  return sendLobbyRequest<BattleSnapshotResponse>(LOBBY_SOCKET_CODES.BATTLE_SNAPSHOT, {
+    roomCode,
+  });
 };
 
 export const submitBattleActionAction = async (
@@ -18,13 +20,11 @@ export const submitBattleActionAction = async (
   moveSlot?: number,
   switchSlot?: number
 ): Promise<BattleActionSubmissionResponse> => {
-  const { data } = await javabeastsApi.post<BattleActionSubmissionResponse>('/battle/action', {
+  return sendLobbyRequest<BattleActionSubmissionResponse>(LOBBY_SOCKET_CODES.SUBMIT_ACTION, {
     roomCode,
     username,
     actionType,
     moveSlot,
     switchSlot,
   });
-
-  return data;
 };
