@@ -102,7 +102,7 @@ public final class BattleScreenFactory {
         turnLabel.setFont(Font.font("System", FontWeight.BOLD, 22));
         turnLabel.setStyle("-fx-text-fill: #fcd34d;");
 
-        Label statusLabel = new Label("Snapshot inicial cargado desde el backend");
+        Label statusLabel = new Label(safeBattleMessage(snapshot));
         statusLabel.setFont(Font.font(17));
         statusLabel.setStyle("-fx-text-fill: #e2e8f0;");
 
@@ -234,5 +234,12 @@ public final class BattleScreenFactory {
 
     private static String safeInteger(Integer value) {
         return value != null ? String.valueOf(value) : "--";
+    }
+
+    private static String safeBattleMessage(BattleSnapshotData snapshot) {
+        String message = snapshot.getMessage();
+        return message != null && !message.isBlank()
+                ? message
+                : "Snapshot inicial cargado desde el backend";
     }
 }

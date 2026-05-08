@@ -121,6 +121,7 @@ public class BattleSessionService {
         BattleSnapshotResponse nextSnapshot = new BattleSnapshotResponse(
                 currentSnapshot.roomCode(),
                 session.getTurnNumber() + 1,
+                resolution.toString().trim(),
                 updatedPlayerOne,
                 updatedPlayerTwo
         );
@@ -238,6 +239,7 @@ public class BattleSessionService {
         return new BattleSnapshotResponse(
                 snapshot.roomCode(),
                 turnNumber + 1,
+                snapshot.message(),
                 snapshot.playerOne(),
                 snapshot.playerTwo()
         );

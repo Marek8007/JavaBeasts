@@ -4,6 +4,7 @@ public class BattleSnapshotData {
 
     private String roomCode;
     private Integer turnNumber;
+    private String message;
     private BattlePlayerSnapshotData playerOne;
     private BattlePlayerSnapshotData playerTwo;
 
@@ -13,6 +14,10 @@ public class BattleSnapshotData {
 
     public Integer getTurnNumber() {
         return turnNumber;
+    }
+
+    public String getMessage() {
+        return message;
     }
 
     public BattlePlayerSnapshotData getPlayerOne() {

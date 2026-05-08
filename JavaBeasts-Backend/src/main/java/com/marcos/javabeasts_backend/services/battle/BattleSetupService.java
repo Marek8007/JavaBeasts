@@ -53,6 +53,7 @@ public class BattleSetupService {
         return new BattleSnapshotResponse(
                 room.getRoomCode(),
                 INITIAL_TURN_NUMBER,
+                "Combate inicializado",
                 playerOne,
                 playerTwo
         );
