@@ -183,7 +183,6 @@ public class JavaBeastsLobbyApp extends Application {
 
         if (!battleScreenShown) {
             battleScreenShown = true;
-            scheduler.shutdownNow();
             loadAndShowBattleScreen(roomStatus);
         }
     }
