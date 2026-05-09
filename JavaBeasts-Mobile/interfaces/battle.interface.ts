@@ -22,6 +22,7 @@ export interface BattleSnapshotResponse {
   turnNumber: number;
   playerOne: BattlePlayerSnapshotResponse;
   playerTwo: BattlePlayerSnapshotResponse;
+  message?: string;
 }
 
 export type BattleActionType = 'ATTACK' | 'SWITCH';
