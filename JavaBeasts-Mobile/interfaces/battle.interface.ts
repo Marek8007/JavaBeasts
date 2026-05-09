@@ -1,3 +1,14 @@
+export interface BattleMoveSnapshotResponse {
+  slot: number;
+  moveId: number;
+  name: string;
+  typeId: number | null;
+  typeName: string | null;
+  damage: number;
+  accuracy: number;
+  specialEffect: string | null;
+}
+
 export interface BattleCreatureSnapshotResponse {
   slot: number;
   jaBeasId: number;
@@ -7,6 +18,7 @@ export interface BattleCreatureSnapshotResponse {
   damage: number;
   defence: number;
   speed: number;
+  moves: BattleMoveSnapshotResponse[];
 }
 
 export interface BattlePlayerSnapshotResponse {

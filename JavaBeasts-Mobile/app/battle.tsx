@@ -1,9 +1,12 @@
 import { getBattleSnapshotAction, submitBattleActionAction } from '@/actions/battle.actions';
+import { getTeamCompositionAction } from '@/actions/team-composition.actions';
 import {
   BattleActionSubmissionResponse,
   BattleCreatureSnapshotResponse,
+  BattleMoveSnapshotResponse,
   BattleSnapshotResponse,
 } from '@/interfaces/battle.interface';
+import { MoveSummaryResponse } from '@/interfaces/team-composition.interface';
 import { useAuthStore } from '@/stores/authStore';
 import { useLobbyStore } from '@/stores/lobbyStore';
 import { Ionicons } from '@expo/vector-icons';
@@ -29,6 +32,7 @@ export default function BattleScreen() {
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
   const [actionLoading, setActionLoading] = useState(false);
+  const [configuredMoves, setConfiguredMoves] = useState<BattleMoveSnapshotResponse[]>([]);
   const [message, setMessage] = useState('');
   const [error, setError] = useState('');
 
@@ -53,6 +57,43 @@ export default function BattleScreen() {
       : actionState.playerTwoActionSubmitted
     : false;
   const waitingForTurnResolution = Boolean(actionState && currentPlayerActionSubmitted && !actionState.turnResolved);
+  const attackMoves = currentPlayer?.activeJaBea.moves?.length
+    ? currentPlayer.activeJaBea.moves
+    : configuredMoves;
+
+  async function loadConfiguredMoves(nextSnapshot: BattleSnapshotResponse) {
+    if (!user) {
+      setConfiguredMoves([]);
+      return;
+    }
+
+    const player =
+      nextSnapshot.playerOne.username === user.username ? nextSnapshot.playerOne : nextSnapshot.playerTwo;
+
+    if (player.activeJaBea.moves?.length) {
+      setConfiguredMoves([]);
+      return;
+    }
+
+    try {
+      const composition = await getTeamCompositionAction(player.userId, player.teamId);
+      const activeSlot = composition.slots.find((slot) => slot.slot === player.activeJaBea.slot);
+      const member = activeSlot?.member;
+
+      if (!member) {
+        setConfiguredMoves([]);
+        return;
+      }
+
+      setConfiguredMoves([
+        toBattleMove(0, member.uniqueMove),
+        toBattleMove(1, member.move1),
+        toBattleMove(2, member.move2),
+      ].filter((move): move is BattleMoveSnapshotResponse => Boolean(move)));
+    } catch {
+      setConfiguredMoves([]);
+    }
+  }
 
   async function loadSnapshot(showRefresh = false) {
     if (!roomStatus?.roomCode) {
@@ -69,6 +110,7 @@ export default function BattleScreen() {
       const nextSnapshot = await getBattleSnapshotAction(roomStatus.roomCode);
       setSnapshot(nextSnapshot);
       setMessage(nextSnapshot.message ?? '');
+      void loadConfiguredMoves(nextSnapshot);
       setActionState((currentActionState) => {
         if (!currentActionState) {
           return currentActionState;
@@ -121,6 +163,7 @@ export default function BattleScreen() {
       setActionState(response);
       setSnapshot(response.snapshot);
       setMessage(response.message);
+      void loadConfiguredMoves(response.snapshot);
     } catch (requestError: any) {
       setError(requestError?.message ? String(requestError.message) : 'No se pudo enviar la accion.');
     } finally {
@@ -191,17 +234,24 @@ export default function BattleScreen() {
             </View>
 
             <View className="gap-3">
-              {[0, 1, 2].map((moveSlot) => (
+              {attackMoves.length ? attackMoves.map((move) => (
                 <Pressable
-                  key={`attack-${moveSlot}`}
+                  key={`attack-${move.slot}`}
                   className={`min-h-[92px] flex-row items-center justify-between rounded-lg bg-beasts-blue px-5 active:opacity-80 ${
                     actionLoading || currentPlayerActionSubmitted ? 'opacity-45' : ''
                   }`}
                   disabled={actionLoading || currentPlayerActionSubmitted}
-                  onPress={() => void submitAttack(moveSlot)}>
+                  onPress={() => void submitAttack(move.slot)}>
                   <View>
-                    <Text className="text-xs font-extrabold uppercase text-white/75">Accion</Text>
-                    <Text className="mt-1 text-2xl font-extrabold text-white">Ataque {moveSlot + 1}</Text>
+                    <Text className="text-2xl font-extrabold text-white">{move.name}</Text>
+                    <Text className="mt-1 text-sm font-semibold text-white/80">
+                      {formatMoveInfo(move)}
+                    </Text>
+                    {move.specialEffect ? (
+                      <Text className="mt-1 max-w-[230px] text-xs font-semibold text-white/70" numberOfLines={1}>
+                        {move.specialEffect}
+                      </Text>
+                    ) : null}
                   </View>
                   {actionLoading ? (
                     <ActivityIndicator color="#ffffff" />
@@ -209,7 +259,13 @@ export default function BattleScreen() {
                     <Ionicons name="arrow-forward-circle" size={34} color="#ffffff" />
                   )}
                 </Pressable>
-              ))}
+              )) : (
+                <View className="rounded-lg border border-[#f7d6bf] bg-[#fff4ed] px-4 py-4">
+                  <Text className="text-sm font-semibold leading-5 text-beasts-warning">
+                    No se pudieron cargar los movimientos de este JaBea.
+                  </Text>
+                </View>
+              )}
             </View>
           </View>
         ) : (
@@ -222,6 +278,28 @@ export default function BattleScreen() {
       </ScrollView>
     </SafeAreaView>
   );
+}
+
+function toBattleMove(slot: number, move?: MoveSummaryResponse | null): BattleMoveSnapshotResponse | null {
+  if (!move) {
+    return null;
+  }
+
+  return {
+    slot,
+    moveId: move.moveId,
+    name: move.name,
+    typeId: move.typeId,
+    typeName: move.typeName,
+    damage: move.damage,
+    accuracy: move.accuracy,
+    specialEffect: move.specialEffect ?? null,
+  };
+}
+
+function formatMoveInfo(move: BattleMoveSnapshotResponse) {
+  const typeLabel = move.typeName ?? 'Sin tipo';
+  return `${typeLabel} · Daño ${move.damage} · Precision ${move.accuracy}%`;
 }
 
 function BattleCreatureCard({

@@ -1,12 +1,16 @@
 package com.marcos.javabeasts_backend.services.battle;
 
 import com.marcos.javabeasts_backend.dto.battle.BattleCreatureSnapshotResponse;
+import com.marcos.javabeasts_backend.dto.battle.BattleMoveSnapshotResponse;
 import com.marcos.javabeasts_backend.dto.battle.BattlePlayerSnapshotResponse;
 import com.marcos.javabeasts_backend.dto.battle.BattleSnapshotResponse;
 import com.marcos.javabeasts_backend.entity.JaBeas;
 import com.marcos.javabeasts_backend.entity.JaBeasTeamed;
+import com.marcos.javabeasts_backend.entity.Move;
 import com.marcos.javabeasts_backend.entity.Team;
+import com.marcos.javabeasts_backend.entity.Type;
 import com.marcos.javabeasts_backend.entity.User;
+import com.marcos.javabeasts_backend.repositories.MoveRepository;
 import com.marcos.javabeasts_backend.repositories.JaBeasTeamedRepository;
 import com.marcos.javabeasts_backend.repositories.TeamRepository;
 import com.marcos.javabeasts_backend.repositories.UserRepository;
@@ -18,6 +22,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.server.ResponseStatusException;
 
+import java.util.ArrayList;
 import java.util.List;
 
 @Service
@@ -29,17 +34,20 @@ public class BattleSetupService {
     private final UserRepository userRepository;
     private final TeamRepository teamRepository;
     private final JaBeasTeamedRepository jaBeasTeamedRepository;
+    private final MoveRepository moveRepository;
 
     public BattleSetupService(
             LobbyRoomService lobbyRoomService,
             UserRepository userRepository,
             TeamRepository teamRepository,
-            JaBeasTeamedRepository jaBeasTeamedRepository
+            JaBeasTeamedRepository jaBeasTeamedRepository,
+            MoveRepository moveRepository
     ) {
         this.lobbyRoomService = lobbyRoomService;
         this.userRepository = userRepository;
         this.teamRepository = teamRepository;
         this.jaBeasTeamedRepository = jaBeasTeamedRepository;
+        this.moveRepository = moveRepository;
     }
 
     @Transactional(readOnly = true)
@@ -103,7 +111,42 @@ public class BattleSetupService {
                 jaBea.getHealth(),
                 jaBea.getDamage(),
                 jaBea.getDefence(),
-                jaBea.getSpeed()
+                jaBea.getSpeed(),
+                toMoveSnapshots(teamMember)
+        );
+    }
+
+    private List<BattleMoveSnapshotResponse> toMoveSnapshots(JaBeasTeamed teamMember) {
+        List<BattleMoveSnapshotResponse> moves = new ArrayList<>();
+        addMoveSnapshot(moves, 0, moveRepository.findByUniqueJabea(teamMember.getJaBeas()));
+        addMoveSnapshot(moves, 1, teamMember.getMove1());
+        addMoveSnapshot(moves, 2, teamMember.getMove2());
+        return moves;
+    }
+
+    private void addMoveSnapshot(List<BattleMoveSnapshotResponse> moves, int slot, Move move) {
+        BattleMoveSnapshotResponse snapshot = toMoveSnapshot(slot, move);
+        if (snapshot != null) {
+            moves.add(snapshot);
+        }
+    }
+
+    private BattleMoveSnapshotResponse toMoveSnapshot(int slot, Move move) {
+        if (move == null) {
+            return null;
+        }
+
+        Type type = move.getType();
+
+        return new BattleMoveSnapshotResponse(
+                slot,
+                move.getMoveId(),
+                move.getName(),
+                type != null ? type.getTypeId() : null,
+                type != null ? type.getType() : null,
+                move.getDamage(),
+                move.getAccuracy(),
+                move.getSpecialEffect()
         );
     }
 }

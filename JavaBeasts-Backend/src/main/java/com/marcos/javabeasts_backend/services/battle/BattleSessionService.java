@@ -217,7 +217,8 @@ public class BattleSessionService {
                 defenderCreature.maxHealth(),
                 defenderCreature.damage(),
                 defenderCreature.defence(),
-                defenderCreature.speed()
+                defenderCreature.speed(),
+                defenderCreature.moves()
         );
 
         return new BattlePlayerSnapshotResponse(
