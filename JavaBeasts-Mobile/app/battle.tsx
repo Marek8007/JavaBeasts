@@ -19,7 +19,7 @@ import {
   View,
 } from 'react-native';
 
-const BATTLE_REFRESH_MS = 2500;
+const WAITING_REFRESH_MS = 2500;
 
 export default function BattleScreen() {
   const user = useAuthStore((state) => state.user);
@@ -52,6 +52,7 @@ export default function BattleScreen() {
       ? actionState.playerOneActionSubmitted
       : actionState.playerTwoActionSubmitted
     : false;
+  const waitingForTurnResolution = Boolean(actionState && currentPlayerActionSubmitted && !actionState.turnResolved);
 
   async function loadSnapshot(showRefresh = false) {
     if (!roomStatus?.roomCode) {
@@ -91,15 +92,21 @@ export default function BattleScreen() {
     }
 
     void loadSnapshot();
+  }, [roomStatus?.canStart, roomStatus?.roomCode]);
+
+  useEffect(() => {
+    if (!waitingForTurnResolution) {
+      return;
+    }
 
     const intervalId = setInterval(() => {
       void loadSnapshot();
-    }, BATTLE_REFRESH_MS);
+    }, WAITING_REFRESH_MS);
 
     return () => {
       clearInterval(intervalId);
     };
-  }, [roomStatus?.canStart, roomStatus?.roomCode]);
+  }, [waitingForTurnResolution, roomStatus?.roomCode]);
 
   async function submitAttack(moveSlot: number) {
     if (!user || !roomStatus || actionLoading || currentPlayerActionSubmitted) {
