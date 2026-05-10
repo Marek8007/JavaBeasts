@@ -35,33 +35,35 @@ public class BattleSessionService {
                 this::createSession
         );
 
-        String username = request.username().trim();
-        if (!session.containsPlayer(username)) {
-            throw new ResponseStatusException(HttpStatus.FORBIDDEN, "El jugador no pertenece a la sesion de combate");
+        synchronized (session) {
+            String username = request.username().trim();
+            if (!session.containsPlayer(username)) {
+                throw new ResponseStatusException(HttpStatus.FORBIDDEN, "El jugador no pertenece a la sesion de combate");
+            }
+
+            BattleTurnAction action = buildAction(request, username, session);
+            session.registerAction(action);
+
+            boolean turnResolved = false;
+            String message = "Accion registrada. Esperando al rival.";
+
+            if (session.isTurnReadyToResolve()) {
+                resolveTurn(session);
+                turnResolved = true;
+                message = session.getLastResolutionMessage();
+            }
+
+            return new BattleActionSubmissionResponse(
+                    session.getRoomCode(),
+                    session.getTurnNumber(),
+                    session.isPlayerOneActionSubmitted(),
+                    session.isPlayerTwoActionSubmitted(),
+                    session.isTurnReadyToResolve(),
+                    turnResolved,
+                    message,
+                    session.getCurrentSnapshot()
+            );
         }
-
-        BattleTurnAction action = buildAction(request, username);
-        session.registerAction(action);
-
-        boolean turnResolved = false;
-        String message = "Accion registrada. Esperando al rival.";
-
-        if (session.isTurnReadyToResolve()) {
-            resolveTurn(session);
-            turnResolved = true;
-            message = session.getLastResolutionMessage();
-        }
-
-        return new BattleActionSubmissionResponse(
-                session.getRoomCode(),
-                session.getTurnNumber(),
-                session.isPlayerOneActionSubmitted(),
-                session.isPlayerTwoActionSubmitted(),
-                session.isTurnReadyToResolve(),
-                turnResolved,
-                message,
-                session.getCurrentSnapshot()
-        );
     }
 
     public BattleSnapshotResponse getCurrentSnapshot(String roomCode) {
@@ -86,48 +88,75 @@ public class BattleSessionService {
         BattleTurnAction playerOneAction = session.getPlayerOneAction();
         BattleTurnAction playerTwoAction = session.getPlayerTwoAction();
 
-        if (playerOneAction.actionType() != BattleActionType.ATTACK || playerTwoAction.actionType() != BattleActionType.ATTACK) {
-            session.completeTurn("Turno resuelto sin cambios de combate. Los cambios de JaBea se implementaran a continuacion.");
-            session.updateSnapshot(withTurnNumber(session.getCurrentSnapshot(), session.getTurnNumber()));
-            return;
-        }
-
         BattleSnapshotResponse currentSnapshot = session.getCurrentSnapshot();
         BattlePlayerSnapshotResponse playerOne = currentSnapshot.playerOne();
         BattlePlayerSnapshotResponse playerTwo = currentSnapshot.playerTwo();
 
+        StringBuilder resolution = new StringBuilder();
+
+        if (playerOneAction.actionType() == BattleActionType.SWITCH) {
+            playerOne = switchActiveCreature(session, playerOne, playerOneAction.switchSlot(), resolution);
+        }
+
+        if (playerTwoAction.actionType() == BattleActionType.SWITCH) {
+            playerTwo = switchActiveCreature(session, playerTwo, playerTwoAction.switchSlot(), resolution);
+        }
+
+        if (playerOneAction.actionType() == BattleActionType.SWITCH && playerTwoAction.actionType() == BattleActionType.SWITCH) {
+            completeResolvedTurn(session, currentSnapshot, playerOne, playerTwo, resolution);
+            return;
+        }
+
         BattleCreatureSnapshotResponse playerOneCreature = playerOne.activeJaBea();
         BattleCreatureSnapshotResponse playerTwoCreature = playerTwo.activeJaBea();
-
-        boolean playerOneActsFirst = actsFirst(playerOneCreature, playerTwoCreature);
 
         BattlePlayerSnapshotResponse updatedPlayerOne = playerOne;
         BattlePlayerSnapshotResponse updatedPlayerTwo = playerTwo;
 
-        StringBuilder resolution = new StringBuilder();
-
-        if (playerOneActsFirst) {
-            updatedPlayerTwo = applyAttack(playerOne, updatedPlayerTwo, resolution);
-            if (updatedPlayerTwo.activeJaBea().currentHealth() > 0) {
-                updatedPlayerOne = applyAttack(playerTwo, updatedPlayerOne, resolution);
-            }
-        } else {
+        if (playerOneAction.actionType() == BattleActionType.SWITCH) {
             updatedPlayerOne = applyAttack(playerTwo, updatedPlayerOne, resolution);
-            if (updatedPlayerOne.activeJaBea().currentHealth() > 0) {
+            updatedPlayerTwo = playerTwo;
+        } else if (playerTwoAction.actionType() == BattleActionType.SWITCH) {
+            updatedPlayerOne = playerOne;
+            updatedPlayerTwo = applyAttack(playerOne, updatedPlayerTwo, resolution);
+        } else {
+            boolean playerOneActsFirst = actsFirst(playerOneCreature, playerTwoCreature);
+
+            if (playerOneActsFirst) {
                 updatedPlayerTwo = applyAttack(playerOne, updatedPlayerTwo, resolution);
+                if (updatedPlayerTwo.activeJaBea().currentHealth() > 0) {
+                    updatedPlayerOne = applyAttack(playerTwo, updatedPlayerOne, resolution);
+                }
+            } else {
+                updatedPlayerOne = applyAttack(playerTwo, updatedPlayerOne, resolution);
+                if (updatedPlayerOne.activeJaBea().currentHealth() > 0) {
+                    updatedPlayerTwo = applyAttack(playerOne, updatedPlayerTwo, resolution);
+                }
             }
         }
+
+        completeResolvedTurn(session, currentSnapshot, updatedPlayerOne, updatedPlayerTwo, resolution);
+    }
+
+    private void completeResolvedTurn(
+            BattleSession session,
+            BattleSnapshotResponse currentSnapshot,
+            BattlePlayerSnapshotResponse updatedPlayerOne,
+            BattlePlayerSnapshotResponse updatedPlayerTwo,
+            StringBuilder resolution
+    ) {
+        String message = resolution.toString().trim();
 
         BattleSnapshotResponse nextSnapshot = new BattleSnapshotResponse(
                 currentSnapshot.roomCode(),
                 session.getTurnNumber() + 1,
-                resolution.toString().trim(),
+                message,
                 updatedPlayerOne,
                 updatedPlayerTwo
         );
 
         session.updateSnapshot(nextSnapshot);
-        session.completeTurn(resolution.toString().trim());
+        session.completeTurn(message);
     }
 
     private void validateRequest(BattleActionRequest request) {
@@ -148,11 +177,17 @@ public class BattleSessionService {
         }
     }
 
-    private BattleTurnAction buildAction(BattleActionRequest request, String username) {
+    private BattleTurnAction buildAction(BattleActionRequest request, String username, BattleSession session) {
         BattleActionType actionType = parseActionType(request.actionType());
+        BattlePlayerSnapshotResponse player = findPlayerSnapshot(session.getCurrentSnapshot(), username);
+        BattleCreatureSnapshotResponse activeCreature = player.activeJaBea();
 
         return switch (actionType) {
             case ATTACK -> {
+                if (activeCreature.currentHealth() != null && activeCreature.currentHealth() <= 0) {
+                    throw new ResponseStatusException(HttpStatus.CONFLICT, "El JaBea activo esta debilitado. Debes cambiar de JaBea");
+                }
+
                 Integer moveSlot = request.moveSlot();
                 if (moveSlot == null || moveSlot < MIN_ATTACK_SLOT || moveSlot > MAX_ATTACK_SLOT) {
                     throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "El slot de ataque debe estar entre 0 y 2");
@@ -164,6 +199,18 @@ public class BattleSessionService {
                 if (switchSlot == null || switchSlot < MIN_SWITCH_SLOT || switchSlot > MAX_SWITCH_SLOT) {
                     throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "El slot de cambio debe estar entre 1 y 4");
                 }
+
+                if (switchSlot.equals(activeCreature.slot())) {
+                    throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "El JaBea elegido ya esta activo");
+                }
+
+                BattleCreatureSnapshotResponse switchCreature = battleSetupService.buildCreatureSnapshot(player.teamId(), switchSlot);
+                int switchHealth = session.getStoredHealth(username, switchSlot)
+                        .orElse(switchCreature.maxHealth() != null ? switchCreature.maxHealth() : 0);
+                if (switchHealth <= 0) {
+                    throw new ResponseStatusException(HttpStatus.CONFLICT, "No puedes cambiar a un JaBea debilitado");
+                }
+
                 yield new BattleTurnAction(username, actionType, null, switchSlot);
             }
         };
@@ -230,19 +277,64 @@ public class BattleSessionService {
         );
     }
 
+    private BattlePlayerSnapshotResponse switchActiveCreature(
+            BattleSession session,
+            BattlePlayerSnapshotResponse player,
+            Integer switchSlot,
+            StringBuilder resolution
+    ) {
+        session.rememberCreatureHealth(player.username(), player.activeJaBea());
+
+        BattleCreatureSnapshotResponse switchCreature = battleSetupService.buildCreatureSnapshot(player.teamId(), switchSlot);
+        int switchHealth = session.getStoredHealth(player.username(), switchSlot)
+                .orElse(switchCreature.maxHealth() != null ? switchCreature.maxHealth() : 0);
+        BattleCreatureSnapshotResponse activeCreature = withCurrentHealth(switchCreature, switchHealth);
+
+        resolution
+                .append(player.username())
+                .append(" cambia a ")
+                .append(activeCreature.name())
+                .append(". ");
+
+        return new BattlePlayerSnapshotResponse(
+                player.userId(),
+                player.username(),
+                player.teamId(),
+                player.teamName(),
+                activeCreature
+        );
+    }
+
+    private BattlePlayerSnapshotResponse findPlayerSnapshot(BattleSnapshotResponse snapshot, String username) {
+        if (snapshot.playerOne().username().equals(username)) {
+            return snapshot.playerOne();
+        }
+
+        if (snapshot.playerTwo().username().equals(username)) {
+            return snapshot.playerTwo();
+        }
+
+        throw new ResponseStatusException(HttpStatus.FORBIDDEN, "El jugador no pertenece a la sesion de combate");
+    }
+
+    private BattleCreatureSnapshotResponse withCurrentHealth(BattleCreatureSnapshotResponse creature, int currentHealth) {
+        return new BattleCreatureSnapshotResponse(
+                creature.slot(),
+                creature.jaBeasId(),
+                creature.name(),
+                currentHealth,
+                creature.maxHealth(),
+                creature.damage(),
+                creature.defence(),
+                creature.speed(),
+                creature.moves()
+        );
+    }
+
     private int calculateDamage(BattleCreatureSnapshotResponse attacker, BattleCreatureSnapshotResponse defender) {
         int attackerDamage = attacker.damage() != null ? attacker.damage() : 0;
         int defenderDefence = defender.defence() != null ? defender.defence() : 0;
         return Math.max(1, attackerDamage - (defenderDefence / 2));
     }
 
-    private BattleSnapshotResponse withTurnNumber(BattleSnapshotResponse snapshot, int turnNumber) {
-        return new BattleSnapshotResponse(
-                snapshot.roomCode(),
-                turnNumber + 1,
-                snapshot.message(),
-                snapshot.playerOne(),
-                snapshot.playerTwo()
-        );
-    }
 }

@@ -1,6 +1,11 @@
 package com.marcos.javabeasts_backend.services.battle;
 
 import com.marcos.javabeasts_backend.dto.battle.BattleSnapshotResponse;
+import com.marcos.javabeasts_backend.dto.battle.BattleCreatureSnapshotResponse;
+
+import java.util.HashMap;
+import java.util.Map;
+import java.util.Optional;
 
 public class BattleSession {
 
@@ -12,6 +17,7 @@ public class BattleSession {
     private BattleTurnAction playerOneAction;
     private BattleTurnAction playerTwoAction;
     private String lastResolutionMessage;
+    private final Map<String, Map<Integer, Integer>> healthByPlayerSlot = new HashMap<>();
 
     public BattleSession(BattleSnapshotResponse initialSnapshot) {
         this.roomCode = initialSnapshot.roomCode();
@@ -20,6 +26,7 @@ public class BattleSession {
         this.playerTwoUsername = initialSnapshot.playerTwo().username();
         this.currentSnapshot = initialSnapshot;
         this.lastResolutionMessage = "Combate inicializado";
+        rememberActiveCreatureHealth(initialSnapshot);
     }
 
     public String getRoomCode() {
@@ -78,6 +85,7 @@ public class BattleSession {
 
     public void updateSnapshot(BattleSnapshotResponse currentSnapshot) {
         this.currentSnapshot = currentSnapshot;
+        rememberActiveCreatureHealth(currentSnapshot);
     }
 
     public void completeTurn(String resolutionMessage) {
@@ -85,5 +93,28 @@ public class BattleSession {
         this.lastResolutionMessage = resolutionMessage;
         this.playerOneAction = null;
         this.playerTwoAction = null;
+    }
+
+    public Optional<Integer> getStoredHealth(String username, Integer slot) {
+        if (username == null || slot == null) {
+            return Optional.empty();
+        }
+
+        return Optional.ofNullable(healthByPlayerSlot.getOrDefault(username, Map.of()).get(slot));
+    }
+
+    public void rememberCreatureHealth(String username, BattleCreatureSnapshotResponse creature) {
+        if (username == null || creature == null || creature.slot() == null || creature.currentHealth() == null) {
+            return;
+        }
+
+        healthByPlayerSlot
+                .computeIfAbsent(username, ignored -> new HashMap<>())
+                .put(creature.slot(), creature.currentHealth());
+    }
+
+    private void rememberActiveCreatureHealth(BattleSnapshotResponse snapshot) {
+        rememberCreatureHealth(snapshot.playerOne().username(), snapshot.playerOne().activeJaBea());
+        rememberCreatureHealth(snapshot.playerTwo().username(), snapshot.playerTwo().activeJaBea());
     }
 }

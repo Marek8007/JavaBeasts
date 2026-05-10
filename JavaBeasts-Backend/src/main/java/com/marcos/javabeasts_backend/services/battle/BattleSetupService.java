@@ -116,6 +116,14 @@ public class BattleSetupService {
         );
     }
 
+    @Transactional(readOnly = true)
+    public BattleCreatureSnapshotResponse buildCreatureSnapshot(Integer teamId, Integer slot) {
+        JaBeasTeamed teamMember = jaBeasTeamedRepository.findByTeamTeamIdAndIdSlot(teamId, slot)
+                .orElseThrow(() -> new ResponseStatusException(HttpStatus.BAD_REQUEST, "El slot de cambio no tiene JaBea asignado"));
+
+        return toCreatureSnapshot(teamMember);
+    }
+
     private List<BattleMoveSnapshotResponse> toMoveSnapshots(JaBeasTeamed teamMember) {
         List<BattleMoveSnapshotResponse> moves = new ArrayList<>();
         addMoveSnapshot(moves, 0, moveRepository.findByUniqueJabea(teamMember.getJaBeas()));
