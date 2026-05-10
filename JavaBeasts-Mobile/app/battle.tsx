@@ -6,7 +6,7 @@ import {
   BattleMoveSnapshotResponse,
   BattleSnapshotResponse,
 } from '@/interfaces/battle.interface';
-import { MoveSummaryResponse } from '@/interfaces/team-composition.interface';
+import { MoveSummaryResponse, TeamSlotResponse } from '@/interfaces/team-composition.interface';
 import { useAuthStore } from '@/stores/authStore';
 import { useLobbyStore } from '@/stores/lobbyStore';
 import { Ionicons } from '@expo/vector-icons';
@@ -24,6 +24,12 @@ import {
 
 const WAITING_REFRESH_MS = 2500;
 
+interface SwitchOption {
+  slot: number;
+  name: string;
+  typeName?: string | null;
+}
+
 export default function BattleScreen() {
   const user = useAuthStore((state) => state.user);
   const roomStatus = useLobbyStore((state) => state.roomStatus);
@@ -33,6 +39,7 @@ export default function BattleScreen() {
   const [refreshing, setRefreshing] = useState(false);
   const [actionLoading, setActionLoading] = useState(false);
   const [configuredMoves, setConfiguredMoves] = useState<BattleMoveSnapshotResponse[]>([]);
+  const [switchOptions, setSwitchOptions] = useState<SwitchOption[]>([]);
   const [message, setMessage] = useState('');
   const [error, setError] = useState('');
 
@@ -60,10 +67,14 @@ export default function BattleScreen() {
   const attackMoves = currentPlayer?.activeJaBea.moves?.length
     ? currentPlayer.activeJaBea.moves
     : configuredMoves;
+  const activeCreatureFainted = Boolean(
+    currentPlayer?.activeJaBea.currentHealth !== undefined && currentPlayer.activeJaBea.currentHealth <= 0
+  );
 
-  async function loadConfiguredMoves(nextSnapshot: BattleSnapshotResponse) {
+  async function loadPlayerTeamOptions(nextSnapshot: BattleSnapshotResponse) {
     if (!user) {
       setConfiguredMoves([]);
+      setSwitchOptions([]);
       return;
     }
 
@@ -72,7 +83,6 @@ export default function BattleScreen() {
 
     if (player.activeJaBea.moves?.length) {
       setConfiguredMoves([]);
-      return;
     }
 
     try {
@@ -80,18 +90,18 @@ export default function BattleScreen() {
       const activeSlot = composition.slots.find((slot) => slot.slot === player.activeJaBea.slot);
       const member = activeSlot?.member;
 
-      if (!member) {
-        setConfiguredMoves([]);
-        return;
+      if (member && !player.activeJaBea.moves?.length) {
+        setConfiguredMoves([
+          toBattleMove(0, member.uniqueMove),
+          toBattleMove(1, member.move1),
+          toBattleMove(2, member.move2),
+        ].filter((move): move is BattleMoveSnapshotResponse => Boolean(move)));
       }
 
-      setConfiguredMoves([
-        toBattleMove(0, member.uniqueMove),
-        toBattleMove(1, member.move1),
-        toBattleMove(2, member.move2),
-      ].filter((move): move is BattleMoveSnapshotResponse => Boolean(move)));
+      setSwitchOptions(toSwitchOptions(composition.slots, player.activeJaBea.slot));
     } catch {
       setConfiguredMoves([]);
+      setSwitchOptions([]);
     }
   }
 
@@ -110,7 +120,7 @@ export default function BattleScreen() {
       const nextSnapshot = await getBattleSnapshotAction(roomStatus.roomCode);
       setSnapshot(nextSnapshot);
       setMessage(nextSnapshot.message ?? '');
-      void loadConfiguredMoves(nextSnapshot);
+      void loadPlayerTeamOptions(nextSnapshot);
       setActionState((currentActionState) => {
         if (!currentActionState) {
           return currentActionState;
@@ -163,9 +173,30 @@ export default function BattleScreen() {
       setActionState(response);
       setSnapshot(response.snapshot);
       setMessage(response.message);
-      void loadConfiguredMoves(response.snapshot);
+      void loadPlayerTeamOptions(response.snapshot);
     } catch (requestError: any) {
       setError(requestError?.message ? String(requestError.message) : 'No se pudo enviar la accion.');
+    } finally {
+      setActionLoading(false);
+    }
+  }
+
+  async function submitSwitch(switchSlot: number) {
+    if (!user || !roomStatus || actionLoading || currentPlayerActionSubmitted) {
+      return;
+    }
+
+    setActionLoading(true);
+    setError('');
+
+    try {
+      const response = await submitBattleActionAction(roomStatus.roomCode, user.username, 'SWITCH', undefined, switchSlot);
+      setActionState(response);
+      setSnapshot(response.snapshot);
+      setMessage(response.message);
+      void loadPlayerTeamOptions(response.snapshot);
+    } catch (requestError: any) {
+      setError(requestError?.message ? String(requestError.message) : 'No se pudo cambiar de JaBea.');
     } finally {
       setActionLoading(false);
     }
@@ -233,8 +264,16 @@ export default function BattleScreen() {
               />
             </View>
 
+            {activeCreatureFainted ? (
+              <View className="rounded-lg border border-[#f7d6bf] bg-[#fff4ed] px-4 py-4">
+                <Text className="text-sm font-semibold leading-5 text-beasts-warning">
+                  Tu JaBea esta debilitado. Elige un sustituto para continuar.
+                </Text>
+              </View>
+            ) : null}
+
             <View className="gap-3">
-              {attackMoves.length ? attackMoves.map((move) => (
+              {!activeCreatureFainted && attackMoves.length ? attackMoves.map((move) => (
                 <Pressable
                   key={`attack-${move.slot}`}
                   className={`min-h-[92px] flex-row items-center justify-between rounded-lg bg-beasts-blue px-5 active:opacity-80 ${
@@ -259,13 +298,37 @@ export default function BattleScreen() {
                     <Ionicons name="arrow-forward-circle" size={34} color="#ffffff" />
                   )}
                 </Pressable>
-              )) : (
+              )) : !activeCreatureFainted ? (
                 <View className="rounded-lg border border-[#f7d6bf] bg-[#fff4ed] px-4 py-4">
                   <Text className="text-sm font-semibold leading-5 text-beasts-warning">
                     No se pudieron cargar los movimientos de este JaBea.
                   </Text>
                 </View>
-              )}
+              ) : null}
+            </View>
+
+            <View className="gap-3">
+              {switchOptions.map((option) => (
+                <Pressable
+                  key={`switch-${option.slot}`}
+                  className={`min-h-[72px] flex-row items-center justify-between rounded-lg border border-[#7c3aed] bg-white px-5 active:opacity-80 ${
+                    actionLoading || currentPlayerActionSubmitted ? 'opacity-45' : ''
+                  }`}
+                  disabled={actionLoading || currentPlayerActionSubmitted}
+                  onPress={() => void submitSwitch(option.slot)}>
+                  <View>
+                    <Text className="text-lg font-extrabold text-[#7c3aed]">{option.name}</Text>
+                    <Text className="mt-1 text-sm font-semibold text-beasts-muted">
+                      Slot {option.slot}{option.typeName ? ` · ${option.typeName}` : ''}
+                    </Text>
+                  </View>
+                  {actionLoading ? (
+                    <ActivityIndicator color="#7c3aed" />
+                  ) : (
+                    <Ionicons name="swap-horizontal" size={28} color="#7c3aed" />
+                  )}
+                </Pressable>
+              ))}
             </View>
           </View>
         ) : (
@@ -278,6 +341,16 @@ export default function BattleScreen() {
       </ScrollView>
     </SafeAreaView>
   );
+}
+
+function toSwitchOptions(slots: TeamSlotResponse[], activeSlot?: number | null): SwitchOption[] {
+  return slots
+    .filter((slot) => slot.slot !== activeSlot && Boolean(slot.member))
+    .map((slot) => ({
+      slot: slot.slot,
+      name: slot.member?.name ?? `Slot ${slot.slot}`,
+      typeName: slot.member?.typeName,
+    }));
 }
 
 function toBattleMove(slot: number, move?: MoveSummaryResponse | null): BattleMoveSnapshotResponse | null {
