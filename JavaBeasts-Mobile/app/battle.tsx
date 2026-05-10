@@ -161,7 +161,7 @@ export default function BattleScreen() {
   }, [waitingForTurnResolution, roomStatus?.roomCode]);
 
   async function submitAttack(moveSlot: number) {
-    if (!user || !roomStatus || actionLoading || currentPlayerActionSubmitted) {
+    if (!user || !roomStatus || actionLoading || currentPlayerActionSubmitted || snapshot?.finished) {
       return;
     }
 
@@ -182,7 +182,7 @@ export default function BattleScreen() {
   }
 
   async function submitSwitch(switchSlot: number) {
-    if (!user || !roomStatus || actionLoading || currentPlayerActionSubmitted) {
+    if (!user || !roomStatus || actionLoading || currentPlayerActionSubmitted || snapshot?.finished) {
       return;
     }
 
@@ -277,9 +277,9 @@ export default function BattleScreen() {
                 <Pressable
                   key={`attack-${move.slot}`}
                   className={`min-h-[92px] flex-row items-center justify-between rounded-lg bg-beasts-blue px-5 active:opacity-80 ${
-                    actionLoading || currentPlayerActionSubmitted ? 'opacity-45' : ''
+                    actionLoading || currentPlayerActionSubmitted || snapshot.finished ? 'opacity-45' : ''
                   }`}
-                  disabled={actionLoading || currentPlayerActionSubmitted}
+                  disabled={actionLoading || currentPlayerActionSubmitted || snapshot.finished}
                   onPress={() => void submitAttack(move.slot)}>
                   <View>
                     <Text className="text-2xl font-extrabold text-white">{move.name}</Text>
@@ -312,9 +312,9 @@ export default function BattleScreen() {
                 <Pressable
                   key={`switch-${option.slot}`}
                   className={`min-h-[72px] flex-row items-center justify-between rounded-lg border border-[#7c3aed] bg-white px-5 active:opacity-80 ${
-                    actionLoading || currentPlayerActionSubmitted ? 'opacity-45' : ''
+                    actionLoading || currentPlayerActionSubmitted || snapshot.finished ? 'opacity-45' : ''
                   }`}
-                  disabled={actionLoading || currentPlayerActionSubmitted}
+                  disabled={actionLoading || currentPlayerActionSubmitted || snapshot.finished}
                   onPress={() => void submitSwitch(option.slot)}>
                   <View>
                     <Text className="text-lg font-extrabold text-[#7c3aed]">{option.name}</Text>

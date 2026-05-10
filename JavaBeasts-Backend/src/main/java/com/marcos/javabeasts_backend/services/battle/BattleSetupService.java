@@ -62,6 +62,8 @@ public class BattleSetupService {
                 room.getRoomCode(),
                 INITIAL_TURN_NUMBER,
                 "Combate inicializado",
+                false,
+                null,
                 playerOne,
                 playerTwo
         );
@@ -122,6 +124,14 @@ public class BattleSetupService {
                 .orElseThrow(() -> new ResponseStatusException(HttpStatus.BAD_REQUEST, "El slot de cambio no tiene JaBea asignado"));
 
         return toCreatureSnapshot(teamMember);
+    }
+
+    @Transactional(readOnly = true)
+    public List<BattleCreatureSnapshotResponse> buildTeamCreatureSnapshots(Integer teamId) {
+        return jaBeasTeamedRepository.findByTeamTeamIdOrderByIdSlotAsc(teamId)
+                .stream()
+                .map(this::toCreatureSnapshot)
+                .toList();
     }
 
     private List<BattleMoveSnapshotResponse> toMoveSnapshots(JaBeasTeamed teamMember) {

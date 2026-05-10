@@ -41,6 +41,10 @@ public class BattleSessionService {
                 throw new ResponseStatusException(HttpStatus.FORBIDDEN, "El jugador no pertenece a la sesion de combate");
             }
 
+            if (session.getCurrentSnapshot().finished()) {
+                throw new ResponseStatusException(HttpStatus.CONFLICT, "El combate ya ha terminado");
+            }
+
             BattleTurnAction action = buildAction(request, username, session);
             session.registerAction(action);
 
@@ -146,11 +150,29 @@ public class BattleSessionService {
             StringBuilder resolution
     ) {
         String message = resolution.toString().trim();
+        boolean playerOneDefeated = !hasAnyAliveCreature(session, updatedPlayerOne);
+        boolean playerTwoDefeated = !hasAnyAliveCreature(session, updatedPlayerTwo);
+        boolean finished = playerOneDefeated || playerTwoDefeated;
+        String winnerUsername = null;
+
+        if (finished) {
+            if (playerOneDefeated && playerTwoDefeated) {
+                message = appendMessage(message, "El combate termina en empate.");
+            } else if (playerOneDefeated) {
+                winnerUsername = updatedPlayerTwo.username();
+                message = appendMessage(message, updatedPlayerTwo.username() + " gana el combate.");
+            } else {
+                winnerUsername = updatedPlayerOne.username();
+                message = appendMessage(message, updatedPlayerOne.username() + " gana el combate.");
+            }
+        }
 
         BattleSnapshotResponse nextSnapshot = new BattleSnapshotResponse(
                 currentSnapshot.roomCode(),
                 session.getTurnNumber() + 1,
                 message,
+                finished,
+                winnerUsername,
                 updatedPlayerOne,
                 updatedPlayerTwo
         );
@@ -303,6 +325,26 @@ public class BattleSessionService {
                 player.teamName(),
                 activeCreature
         );
+    }
+
+    private boolean hasAnyAliveCreature(BattleSession session, BattlePlayerSnapshotResponse player) {
+        session.rememberCreatureHealth(player.username(), player.activeJaBea());
+
+        return battleSetupService.buildTeamCreatureSnapshots(player.teamId())
+                .stream()
+                .anyMatch(creature -> {
+                    int currentHealth = session.getStoredHealth(player.username(), creature.slot())
+                            .orElse(creature.maxHealth() != null ? creature.maxHealth() : 0);
+                    return currentHealth > 0;
+                });
+    }
+
+    private String appendMessage(String currentMessage, String extraMessage) {
+        if (currentMessage == null || currentMessage.isBlank()) {
+            return extraMessage;
+        }
+
+        return currentMessage + " " + extraMessage;
     }
 
     private BattlePlayerSnapshotResponse findPlayerSnapshot(BattleSnapshotResponse snapshot, String username) {

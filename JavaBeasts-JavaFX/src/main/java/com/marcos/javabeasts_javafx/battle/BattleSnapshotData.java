@@ -5,6 +5,8 @@ public class BattleSnapshotData {
     private String roomCode;
     private Integer turnNumber;
     private String message;
+    private boolean finished;
+    private String winnerUsername;
     private BattlePlayerSnapshotData playerOne;
     private BattlePlayerSnapshotData playerTwo;
 
@@ -18,6 +20,14 @@ public class BattleSnapshotData {
 
     public String getMessage() {
         return message;
+    }
+
+    public boolean isFinished() {
+        return finished;
+    }
+
+    public String getWinnerUsername() {
+        return winnerUsername;
     }
 
     public BattlePlayerSnapshotData getPlayerOne() {

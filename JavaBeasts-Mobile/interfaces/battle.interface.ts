@@ -35,6 +35,8 @@ export interface BattleSnapshotResponse {
   playerOne: BattlePlayerSnapshotResponse;
   playerTwo: BattlePlayerSnapshotResponse;
   message?: string;
+  finished?: boolean;
+  winnerUsername?: string | null;
 }
 
 export type BattleActionType = 'ATTACK' | 'SWITCH';
