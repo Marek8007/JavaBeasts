@@ -81,9 +81,9 @@ public final class BattleScreenFactory {
         title.setFont(Font.font("System", FontWeight.BOLD, 34));
         title.setStyle("-fx-text-fill: #f8fafc;");
 
-        Label subtitle = new Label("Estado inicial del combate");
+        Label subtitle = new Label(snapshot.isFinished() ? "Combate finalizado" : "Combate en curso");
         subtitle.setFont(Font.font(18));
-        subtitle.setStyle("-fx-text-fill: #cbd5e1;");
+        subtitle.setStyle("-fx-text-fill: " + (snapshot.isFinished() ? "#86efac" : "#cbd5e1") + ";");
 
         Label roomCodeLabel = new Label("Sala " + safeRoomCode(snapshot));
         roomCodeLabel.setFont(Font.font("System", FontWeight.SEMI_BOLD, 18));
@@ -98,15 +98,19 @@ public final class BattleScreenFactory {
         HBox battleRow = new HBox(24, playerOnePanel, playerTwoPanel);
         battleRow.setAlignment(Pos.CENTER);
 
-        Label turnLabel = new Label("Turno " + safeTurnNumber(snapshot));
+        Label turnLabel = new Label(snapshot.isFinished()
+                ? safeBattleResult(snapshot)
+                : "Turno " + safeTurnNumber(snapshot));
         turnLabel.setFont(Font.font("System", FontWeight.BOLD, 22));
-        turnLabel.setStyle("-fx-text-fill: #fcd34d;");
+        turnLabel.setStyle("-fx-text-fill: " + (snapshot.isFinished() ? "#86efac" : "#fcd34d") + ";");
 
         Label statusLabel = new Label(safeBattleMessage(snapshot));
         statusLabel.setFont(Font.font(17));
         statusLabel.setStyle("-fx-text-fill: #e2e8f0;");
 
-        Label footerHint = new Label("Siguiente paso: resolver acciones y refrescar el estado real del combate");
+        Label footerHint = new Label(snapshot.isFinished()
+                ? "Partida terminada"
+                : "Esperando acciones de los jugadores");
         footerHint.setFont(Font.font(14));
         footerHint.setStyle("-fx-text-fill: #94a3b8;");
 
@@ -241,5 +245,12 @@ public final class BattleScreenFactory {
         return message != null && !message.isBlank()
                 ? message
                 : "Snapshot inicial cargado desde el backend";
+    }
+
+    private static String safeBattleResult(BattleSnapshotData snapshot) {
+        String winnerUsername = snapshot.getWinnerUsername();
+        return winnerUsername != null && !winnerUsername.isBlank()
+                ? "Ganador: " + winnerUsername
+                : "Combate finalizado";
     }
 }

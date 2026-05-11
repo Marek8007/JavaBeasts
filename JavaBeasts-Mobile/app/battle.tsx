@@ -70,6 +70,13 @@ export default function BattleScreen() {
   const activeCreatureFainted = Boolean(
     currentPlayer?.activeJaBea.currentHealth !== undefined && currentPlayer.activeJaBea.currentHealth <= 0
   );
+  const resultLabel = snapshot?.finished
+    ? snapshot.winnerUsername
+      ? snapshot.winnerUsername === user?.username
+        ? 'Victoria'
+        : 'Derrota'
+      : 'Empate'
+    : null;
 
   async function loadPlayerTeamOptions(nextSnapshot: BattleSnapshotResponse) {
     if (!user) {
@@ -234,8 +241,17 @@ export default function BattleScreen() {
         ) : snapshot && currentPlayer && rivalPlayer ? (
           <View className="gap-4">
             <View className="rounded-lg bg-white p-4 shadow-lg shadow-beasts-ink/10">
-              <Text className="text-xs font-extrabold uppercase text-beasts-muted">Turno</Text>
-              <Text className="mt-1 text-4xl font-extrabold text-beasts-ink">{snapshot.turnNumber}</Text>
+              <Text className="text-xs font-extrabold uppercase text-beasts-muted">
+                {snapshot.finished ? 'Resultado' : 'Turno'}
+              </Text>
+              <Text className={`mt-1 text-4xl font-extrabold ${snapshot.finished ? 'text-[#15803d]' : 'text-beasts-ink'}`}>
+                {resultLabel ?? snapshot.turnNumber}
+              </Text>
+              {snapshot.finished && snapshot.winnerUsername ? (
+                <Text className="mt-2 text-sm font-extrabold text-beasts-ink">
+                  Ganador: {snapshot.winnerUsername}
+                </Text>
+              ) : null}
               <Text className="mt-3 text-sm font-semibold leading-5 text-beasts-muted">
                 {message
                   ? message
@@ -264,7 +280,13 @@ export default function BattleScreen() {
               />
             </View>
 
-            {activeCreatureFainted ? (
+            {snapshot.finished ? (
+              <View className="rounded-lg border border-[#cde7d8] bg-[#f0fdf4] px-4 py-4">
+                <Text className="text-sm font-semibold leading-5 text-[#15803d]">
+                  El combate ha terminado. La sala queda bloqueada hasta el siguiente reinicio de partida.
+                </Text>
+              </View>
+            ) : activeCreatureFainted ? (
               <View className="rounded-lg border border-[#f7d6bf] bg-[#fff4ed] px-4 py-4">
                 <Text className="text-sm font-semibold leading-5 text-beasts-warning">
                   Tu JaBea esta debilitado. Elige un sustituto para continuar.
@@ -272,8 +294,10 @@ export default function BattleScreen() {
               </View>
             ) : null}
 
-            <View className="gap-3">
-              {!activeCreatureFainted && attackMoves.length ? attackMoves.map((move) => (
+            {!snapshot.finished ? (
+              <>
+              <View className="gap-3">
+                {!activeCreatureFainted && attackMoves.length ? attackMoves.map((move) => (
                 <Pressable
                   key={`attack-${move.slot}`}
                   className={`min-h-[92px] flex-row items-center justify-between rounded-lg bg-beasts-blue px-5 active:opacity-80 ${
@@ -305,10 +329,10 @@ export default function BattleScreen() {
                   </Text>
                 </View>
               ) : null}
-            </View>
+              </View>
 
-            <View className="gap-3">
-              {switchOptions.map((option) => (
+              <View className="gap-3">
+                {switchOptions.map((option) => (
                 <Pressable
                   key={`switch-${option.slot}`}
                   className={`min-h-[72px] flex-row items-center justify-between rounded-lg border border-[#7c3aed] bg-white px-5 active:opacity-80 ${
@@ -328,8 +352,10 @@ export default function BattleScreen() {
                     <Ionicons name="swap-horizontal" size={28} color="#7c3aed" />
                   )}
                 </Pressable>
-              ))}
-            </View>
+                ))}
+              </View>
+              </>
+            ) : null}
           </View>
         ) : (
           <View className="rounded-lg bg-white px-4 py-5">
