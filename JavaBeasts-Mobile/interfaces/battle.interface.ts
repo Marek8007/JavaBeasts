@@ -39,7 +39,7 @@ export interface BattleSnapshotResponse {
   winnerUsername?: string | null;
 }
 
-export type BattleActionType = 'ATTACK' | 'SWITCH';
+export type BattleActionType = 'ATTACK' | 'SWITCH' | 'SURRENDER';
 
 export interface BattleActionSubmissionResponse {
   roomCode: string;

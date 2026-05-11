@@ -16,6 +16,7 @@ import { router } from 'expo-router';
 import { useEffect, useMemo, useState } from 'react';
 import {
   ActivityIndicator,
+  Alert,
   Image,
   Pressable,
   RefreshControl,
@@ -222,6 +223,41 @@ export default function BattleScreen() {
     }
   }
 
+  function confirmSurrender() {
+    if (!user || !roomStatus || actionLoading || snapshot?.finished) {
+      return;
+    }
+
+    Alert.alert('Rendirse', 'Quieres rendirte y dar la victoria al rival?', [
+      { text: 'Cancelar', style: 'cancel' },
+      {
+        text: 'Rendirse',
+        style: 'destructive',
+        onPress: () => void submitSurrender(),
+      },
+    ]);
+  }
+
+  async function submitSurrender() {
+    if (!user || !roomStatus || actionLoading || snapshot?.finished) {
+      return;
+    }
+
+    setActionLoading(true);
+    setError('');
+
+    try {
+      const response = await submitBattleActionAction(roomStatus.roomCode, user.username, 'SURRENDER');
+      setActionState(response);
+      setSnapshot(response.snapshot);
+      setMessage(response.message);
+    } catch (requestError: any) {
+      setError(requestError?.message ? String(requestError.message) : 'No se pudo rendir la partida.');
+    } finally {
+      setActionLoading(false);
+    }
+  }
+
   return (
     <SafeAreaView className="flex-1 bg-beasts-soft">
       <ScrollView
@@ -235,9 +271,14 @@ export default function BattleScreen() {
               Sala {roomStatus?.roomCode ?? '------'}
             </Text>
           </View>
-          <View className="h-12 w-12 items-center justify-center rounded-lg bg-beasts-blue">
-            <Ionicons name="flash-outline" size={24} color="#ffffff" />
-          </View>
+          <Pressable
+            className={`h-12 w-12 items-center justify-center rounded-lg bg-[#bb3e03] active:opacity-80 ${
+              actionLoading || snapshot?.finished ? 'opacity-45' : ''
+            }`}
+            disabled={actionLoading || snapshot?.finished}
+            onPress={confirmSurrender}>
+            <Ionicons name="flag-outline" size={24} color="#ffffff" />
+          </Pressable>
         </View>
 
         {error ? (

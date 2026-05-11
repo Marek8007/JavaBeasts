@@ -53,7 +53,11 @@ public class BattleSessionService {
             boolean turnResolved = false;
             String message = "Accion registrada. Esperando al rival.";
 
-            if (session.isTurnReadyToResolve()) {
+            if (action.actionType() == BattleActionType.SURRENDER) {
+                resolveSurrender(session, username);
+                turnResolved = true;
+                message = session.getLastResolutionMessage();
+            } else if (session.isTurnReadyToResolve()) {
                 resolveTurn(session);
                 turnResolved = true;
                 message = session.getLastResolutionMessage();
@@ -238,6 +242,7 @@ public class BattleSessionService {
 
                 yield new BattleTurnAction(username, actionType, null, switchSlot);
             }
+            case SURRENDER -> new BattleTurnAction(username, actionType, null, null);
         };
     }
 
@@ -247,6 +252,29 @@ public class BattleSessionService {
         } catch (IllegalArgumentException e) {
             throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "El tipo de accion no es valido");
         }
+    }
+
+    private void resolveSurrender(BattleSession session, String surrenderUsername) {
+        BattleSnapshotResponse currentSnapshot = session.getCurrentSnapshot();
+        BattlePlayerSnapshotResponse playerOne = currentSnapshot.playerOne();
+        BattlePlayerSnapshotResponse playerTwo = currentSnapshot.playerTwo();
+        String winnerUsername = playerOne.username().equals(surrenderUsername)
+                ? playerTwo.username()
+                : playerOne.username();
+        String message = surrenderUsername + " se ha rendido. " + winnerUsername + " gana el combate.";
+
+        BattleSnapshotResponse nextSnapshot = new BattleSnapshotResponse(
+                currentSnapshot.roomCode(),
+                session.getTurnNumber() + 1,
+                message,
+                true,
+                winnerUsername,
+                playerOne,
+                playerTwo
+        );
+
+        session.updateSnapshot(nextSnapshot);
+        session.completeTurn(message);
     }
 
     private boolean actsFirst(BattleCreatureSnapshotResponse playerOneCreature, BattleCreatureSnapshotResponse playerTwoCreature) {
