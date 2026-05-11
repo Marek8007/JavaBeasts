@@ -1,4 +1,4 @@
-import { getBattleSnapshotAction, submitBattleActionAction } from '@/actions/battle.actions';
+import { getBattleSnapshotAction, resetBattleAction, submitBattleActionAction } from '@/actions/battle.actions';
 import { getTeamCompositionAction } from '@/actions/team-composition.actions';
 import { getJaBeaImage } from '@/constants/jabea-images';
 import {
@@ -47,11 +47,13 @@ const TYPE_COLORS: Record<string, string> = {
 export default function BattleScreen() {
   const user = useAuthStore((state) => state.user);
   const roomStatus = useLobbyStore((state) => state.roomStatus);
+  const setRoomStatus = useLobbyStore((state) => state.setRoomStatus);
   const [snapshot, setSnapshot] = useState<BattleSnapshotResponse | null>(null);
   const [actionState, setActionState] = useState<BattleActionSubmissionResponse | null>(null);
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
   const [actionLoading, setActionLoading] = useState(false);
+  const [resettingBattle, setResettingBattle] = useState(false);
   const [configuredMoves, setConfiguredMoves] = useState<BattleMoveSnapshotResponse[]>([]);
   const [switchOptions, setSwitchOptions] = useState<SwitchOption[]>([]);
   const [message, setMessage] = useState('');
@@ -258,6 +260,28 @@ export default function BattleScreen() {
     }
   }
 
+  async function resetBattle() {
+    if (!roomStatus?.roomCode || resettingBattle) {
+      return;
+    }
+
+    setResettingBattle(true);
+    setError('');
+
+    try {
+      const status = await resetBattleAction(roomStatus.roomCode);
+      setRoomStatus(status);
+      setSnapshot(null);
+      setActionState(null);
+      setMessage('');
+      router.replace('/(tabs)/room');
+    } catch (requestError: any) {
+      setError(requestError?.message ? String(requestError.message) : 'No se pudo volver a la sala.');
+    } finally {
+      setResettingBattle(false);
+    }
+  }
+
   return (
     <SafeAreaView className="flex-1 bg-beasts-soft">
       <ScrollView
@@ -335,10 +359,22 @@ export default function BattleScreen() {
             </View>
 
             {snapshot.finished ? (
-              <View className="rounded-lg border border-[#cde7d8] bg-[#f0fdf4] px-4 py-4">
+              <View className="gap-3 rounded-lg border border-[#cde7d8] bg-[#f0fdf4] px-4 py-4">
                 <Text className="text-sm font-semibold leading-5 text-[#15803d]">
-                  El combate ha terminado. La sala queda bloqueada hasta el siguiente reinicio de partida.
+                  El combate ha terminado. Puedes volver a la sala para preparar otra partida.
                 </Text>
+                <Pressable
+                  className={`min-h-11 items-center justify-center rounded-lg bg-[#15803d] px-4 active:opacity-80 ${
+                    resettingBattle ? 'opacity-65' : ''
+                  }`}
+                  disabled={resettingBattle}
+                  onPress={() => void resetBattle()}>
+                  {resettingBattle ? (
+                    <ActivityIndicator color="#ffffff" />
+                  ) : (
+                    <Text className="text-sm font-extrabold text-white">Volver a sala</Text>
+                  )}
+                </Pressable>
               </View>
             ) : activeCreatureFainted ? (
               <View className="rounded-lg border border-[#f7d6bf] bg-[#fff4ed] px-4 py-4">

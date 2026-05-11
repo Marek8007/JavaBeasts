@@ -106,6 +106,11 @@ public class LobbyClientHandler implements Runnable {
                             optionalInteger(data, "switchSlot")
                     ))
             );
+            case SocketCodes.RESET_BATTLE -> {
+                String roomCode = requiredString(data, "roomCode");
+                battleSessionService.resetBattle(roomCode);
+                yield successResponse(lobbyRoomService.resetReadyStates(roomCode));
+            }
             default -> errorResponse("Codigo de operacion no soportado");
         };
     }

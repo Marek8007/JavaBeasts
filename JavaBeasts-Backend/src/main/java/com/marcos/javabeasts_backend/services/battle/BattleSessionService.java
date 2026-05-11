@@ -89,6 +89,19 @@ public class BattleSessionService {
         return session.getCurrentSnapshot();
     }
 
+    public void resetBattle(String roomCode) {
+        if (roomCode == null || roomCode.isBlank()) {
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "El codigo de sala es obligatorio");
+        }
+
+        BattleSession session = sessionsByRoomCode.get(roomCode.trim());
+        if (session != null && !session.getCurrentSnapshot().finished()) {
+            throw new ResponseStatusException(HttpStatus.CONFLICT, "El combate todavia no ha terminado");
+        }
+
+        sessionsByRoomCode.remove(roomCode.trim());
+    }
+
     private BattleSession createSession(String roomCode) {
         BattleSnapshotResponse snapshot = battleSetupService.buildInitialSnapshot(roomCode);
         return new BattleSession(snapshot);

@@ -43,6 +43,12 @@ public class LobbyRoomService {
         return toPayload(room);
     }
 
+    public synchronized RoomStatusPayload resetReadyStates(String roomCode) {
+        validateRoomCode(roomCode);
+        room.resetReadyStates();
+        return toPayload(room);
+    }
+
     private void validateRoomCode(String roomCode) {
         if (!room.getRoomCode().equals(roomCode)) {
             throw new IllegalArgumentException("El codigo de sala no es valido");

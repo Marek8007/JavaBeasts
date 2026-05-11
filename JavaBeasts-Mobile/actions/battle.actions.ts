@@ -3,7 +3,7 @@ import {
   BattleActionType,
   BattleSnapshotResponse,
 } from '@/interfaces/battle.interface';
-import { LOBBY_SOCKET_CODES } from '@/interfaces/lobby-socket.interface';
+import { LOBBY_SOCKET_CODES, RoomStatusPayload } from '@/interfaces/lobby-socket.interface';
 
 import { sendLobbyRequest } from './lobby-socket.actions';
 
@@ -26,5 +26,11 @@ export const submitBattleActionAction = async (
     actionType,
     moveSlot,
     switchSlot,
+  });
+};
+
+export const resetBattleAction = async (roomCode: string): Promise<RoomStatusPayload> => {
+  return sendLobbyRequest<RoomStatusPayload>(LOBBY_SOCKET_CODES.RESET_BATTLE, {
+    roomCode,
   });
 };
