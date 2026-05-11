@@ -12,6 +12,7 @@ import org.springframework.web.server.ResponseStatusException;
 
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.ThreadLocalRandom;
 
 @Service
 public class BattleSessionService {
@@ -251,7 +252,11 @@ public class BattleSessionService {
     private boolean actsFirst(BattleCreatureSnapshotResponse playerOneCreature, BattleCreatureSnapshotResponse playerTwoCreature) {
         int playerOneSpeed = playerOneCreature.speed() != null ? playerOneCreature.speed() : 0;
         int playerTwoSpeed = playerTwoCreature.speed() != null ? playerTwoCreature.speed() : 0;
-        return playerOneSpeed >= playerTwoSpeed;
+        if (playerOneSpeed == playerTwoSpeed) {
+            return ThreadLocalRandom.current().nextBoolean();
+        }
+
+        return playerOneSpeed > playerTwoSpeed;
     }
 
     private BattlePlayerSnapshotResponse applyAttack(
@@ -263,6 +268,15 @@ public class BattleSessionService {
         BattleCreatureSnapshotResponse attackerCreature = attacker.activeJaBea();
         BattleCreatureSnapshotResponse defenderCreature = defender.activeJaBea();
         BattleMoveSnapshotResponse selectedMove = findSelectedMove(attackerCreature, action.moveSlot());
+
+        if (!moveHits(selectedMove)) {
+            resolution
+                    .append(attacker.username())
+                    .append(" usa ")
+                    .append(selectedMove.name())
+                    .append(", pero falla. ");
+            return defender;
+        }
 
         int damage = calculateDamage(selectedMove, defenderCreature);
         int currentHealth = defenderCreature.currentHealth() != null ? defenderCreature.currentHealth() : 0;
@@ -393,6 +407,19 @@ public class BattleSessionService {
         int moveDamage = move.damage() != null ? move.damage() : 0;
         int defenderDefence = defender.defence() != null ? defender.defence() : 0;
         return Math.max(1, moveDamage - (defenderDefence / 2));
+    }
+
+    private boolean moveHits(BattleMoveSnapshotResponse move) {
+        int accuracy = move.accuracy() != null ? move.accuracy() : 100;
+        if (accuracy >= 100) {
+            return true;
+        }
+
+        if (accuracy <= 0) {
+            return false;
+        }
+
+        return ThreadLocalRandom.current().nextInt(100) < accuracy;
     }
 
 }
