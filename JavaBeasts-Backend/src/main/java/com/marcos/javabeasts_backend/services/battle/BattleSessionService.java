@@ -3,6 +3,7 @@ package com.marcos.javabeasts_backend.services.battle;
 import com.marcos.javabeasts_backend.dto.battle.BattleActionRequest;
 import com.marcos.javabeasts_backend.dto.battle.BattleActionSubmissionResponse;
 import com.marcos.javabeasts_backend.dto.battle.BattleCreatureSnapshotResponse;
+import com.marcos.javabeasts_backend.dto.battle.BattleMoveSnapshotResponse;
 import com.marcos.javabeasts_backend.dto.battle.BattlePlayerSnapshotResponse;
 import com.marcos.javabeasts_backend.dto.battle.BattleSnapshotResponse;
 import org.springframework.http.HttpStatus;
@@ -118,23 +119,23 @@ public class BattleSessionService {
         BattlePlayerSnapshotResponse updatedPlayerTwo = playerTwo;
 
         if (playerOneAction.actionType() == BattleActionType.SWITCH) {
-            updatedPlayerOne = applyAttack(playerTwo, updatedPlayerOne, resolution);
+            updatedPlayerOne = applyAttack(playerTwo, updatedPlayerOne, playerTwoAction, resolution);
             updatedPlayerTwo = playerTwo;
         } else if (playerTwoAction.actionType() == BattleActionType.SWITCH) {
             updatedPlayerOne = playerOne;
-            updatedPlayerTwo = applyAttack(playerOne, updatedPlayerTwo, resolution);
+            updatedPlayerTwo = applyAttack(playerOne, updatedPlayerTwo, playerOneAction, resolution);
         } else {
             boolean playerOneActsFirst = actsFirst(playerOneCreature, playerTwoCreature);
 
             if (playerOneActsFirst) {
-                updatedPlayerTwo = applyAttack(playerOne, updatedPlayerTwo, resolution);
+                updatedPlayerTwo = applyAttack(playerOne, updatedPlayerTwo, playerOneAction, resolution);
                 if (updatedPlayerTwo.activeJaBea().currentHealth() > 0) {
-                    updatedPlayerOne = applyAttack(playerTwo, updatedPlayerOne, resolution);
+                    updatedPlayerOne = applyAttack(playerTwo, updatedPlayerOne, playerTwoAction, resolution);
                 }
             } else {
-                updatedPlayerOne = applyAttack(playerTwo, updatedPlayerOne, resolution);
+                updatedPlayerOne = applyAttack(playerTwo, updatedPlayerOne, playerTwoAction, resolution);
                 if (updatedPlayerOne.activeJaBea().currentHealth() > 0) {
-                    updatedPlayerTwo = applyAttack(playerOne, updatedPlayerTwo, resolution);
+                    updatedPlayerTwo = applyAttack(playerOne, updatedPlayerTwo, playerOneAction, resolution);
                 }
             }
         }
@@ -214,6 +215,7 @@ public class BattleSessionService {
                 if (moveSlot == null || moveSlot < MIN_ATTACK_SLOT || moveSlot > MAX_ATTACK_SLOT) {
                     throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "El slot de ataque debe estar entre 0 y 2");
                 }
+                findSelectedMove(activeCreature, moveSlot);
                 yield new BattleTurnAction(username, actionType, moveSlot, null);
             }
             case SWITCH -> {
@@ -255,19 +257,21 @@ public class BattleSessionService {
     private BattlePlayerSnapshotResponse applyAttack(
             BattlePlayerSnapshotResponse attacker,
             BattlePlayerSnapshotResponse defender,
+            BattleTurnAction action,
             StringBuilder resolution
     ) {
         BattleCreatureSnapshotResponse attackerCreature = attacker.activeJaBea();
         BattleCreatureSnapshotResponse defenderCreature = defender.activeJaBea();
+        BattleMoveSnapshotResponse selectedMove = findSelectedMove(attackerCreature, action.moveSlot());
 
-        int damage = calculateDamage(attackerCreature, defenderCreature);
+        int damage = calculateDamage(selectedMove, defenderCreature);
         int currentHealth = defenderCreature.currentHealth() != null ? defenderCreature.currentHealth() : 0;
         int newHealth = Math.max(0, currentHealth - damage);
 
         resolution
                 .append(attacker.username())
-                .append(" ataca con ")
-                .append(attackerCreature.name())
+                .append(" usa ")
+                .append(selectedMove.name())
                 .append(" y causa ")
                 .append(damage)
                 .append(" de daño a ")
@@ -373,10 +377,22 @@ public class BattleSessionService {
         );
     }
 
-    private int calculateDamage(BattleCreatureSnapshotResponse attacker, BattleCreatureSnapshotResponse defender) {
-        int attackerDamage = attacker.damage() != null ? attacker.damage() : 0;
+    private BattleMoveSnapshotResponse findSelectedMove(BattleCreatureSnapshotResponse attacker, Integer moveSlot) {
+        if (attacker.moves() == null) {
+            throw new ResponseStatusException(HttpStatus.CONFLICT, "El JaBea activo no tiene movimientos cargados");
+        }
+
+        return attacker.moves()
+                .stream()
+                .filter(move -> move.slot().equals(moveSlot))
+                .findFirst()
+                .orElseThrow(() -> new ResponseStatusException(HttpStatus.BAD_REQUEST, "El movimiento elegido no esta disponible"));
+    }
+
+    private int calculateDamage(BattleMoveSnapshotResponse move, BattleCreatureSnapshotResponse defender) {
+        int moveDamage = move.damage() != null ? move.damage() : 0;
         int defenderDefence = defender.defence() != null ? defender.defence() : 0;
-        return Math.max(1, attackerDamage - (defenderDefence / 2));
+        return Math.max(1, moveDamage - (defenderDefence / 2));
     }
 
 }
