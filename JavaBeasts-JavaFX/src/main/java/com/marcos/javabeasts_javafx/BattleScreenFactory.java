@@ -9,6 +9,8 @@ import javafx.geometry.Insets;
 import javafx.geometry.Pos;
 import javafx.scene.Scene;
 import javafx.scene.control.Label;
+import javafx.scene.image.Image;
+import javafx.scene.image.ImageView;
 import javafx.scene.layout.BorderPane;
 import javafx.scene.layout.HBox;
 import javafx.scene.layout.Priority;
@@ -16,6 +18,9 @@ import javafx.scene.layout.Region;
 import javafx.scene.layout.VBox;
 import javafx.scene.text.Font;
 import javafx.scene.text.FontWeight;
+
+import java.text.Normalizer;
+import java.util.Locale;
 
 public final class BattleScreenFactory {
 
@@ -194,6 +199,8 @@ public final class BattleScreenFactory {
         String activeJaBeaName = activeJaBea != null && activeJaBea.getName() != null && !activeJaBea.getName().isBlank()
                 ? activeJaBea.getName()
                 : "Pendiente";
+        ImageView jaBeaImage = createJaBeaImage(activeJaBeaName, 96);
+
         Label activeJaBeaLabel = new Label("JaBea activo: " + activeJaBeaName);
         activeJaBeaLabel.setFont(Font.font(16));
         activeJaBeaLabel.setStyle("-fx-text-fill: #cbd5e1;");
@@ -208,7 +215,10 @@ public final class BattleScreenFactory {
         Region spacer = new Region();
         VBox.setVgrow(spacer, Priority.ALWAYS);
 
-        VBox panel = new VBox(12, slotLabel, usernameLabel, teamLabel, activeJaBeaLabel, spacer, hpLabel);
+        HBox creatureRow = new HBox(18, jaBeaImage, new VBox(6, teamLabel, activeJaBeaLabel));
+        creatureRow.setAlignment(Pos.CENTER_LEFT);
+
+        VBox panel = new VBox(12, slotLabel, usernameLabel, creatureRow, spacer, hpLabel);
         panel.setAlignment(Pos.TOP_LEFT);
         panel.setPadding(new Insets(24));
         panel.setPrefWidth(420);
@@ -252,5 +262,34 @@ public final class BattleScreenFactory {
         return winnerUsername != null && !winnerUsername.isBlank()
                 ? "Ganador: " + winnerUsername
                 : "Combate finalizado";
+    }
+
+    private static ImageView createJaBeaImage(String jaBeaName, double size) {
+        Image image = new Image(BattleScreenFactory.class.getResourceAsStream(resolveJaBeaImagePath(jaBeaName)));
+        ImageView imageView = new ImageView(image);
+        imageView.setFitWidth(size);
+        imageView.setFitHeight(size);
+        imageView.setPreserveRatio(true);
+        imageView.setSmooth(false);
+        return imageView;
+    }
+
+    private static String resolveJaBeaImagePath(String jaBeaName) {
+        String normalizedName = normalizeJaBeaName(jaBeaName);
+        String path = "/jabeas/" + normalizedName + ".png";
+
+        return BattleScreenFactory.class.getResource(path) != null
+                ? path
+                : "/jabeas/placeholder.png";
+    }
+
+    private static String normalizeJaBeaName(String jaBeaName) {
+        if (jaBeaName == null || jaBeaName.isBlank()) {
+            return "placeholder";
+        }
+
+        String withoutAccents = Normalizer.normalize(jaBeaName, Normalizer.Form.NFD)
+                .replaceAll("\\p{M}", "");
+        return withoutAccents.trim().toLowerCase(Locale.ROOT);
     }
 }
