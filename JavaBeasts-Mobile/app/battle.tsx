@@ -35,6 +35,14 @@ interface SwitchOption {
 
 type IoniconName = ComponentProps<typeof Ionicons>['name'];
 
+const TYPE_COLORS: Record<string, string> = {
+  Agua: '#1d4ed8',
+  Electrico: '#ca8a04',
+  Fuego: '#c2410c',
+  Normal: '#64748b',
+  Planta: '#15803d',
+};
+
 export default function BattleScreen() {
   const user = useAuthStore((state) => state.user);
   const roomStatus = useLobbyStore((state) => state.roomStatus);
@@ -430,6 +438,7 @@ function BattleCreatureCard({
 }) {
   const typeName = creature.moves?.[0]?.typeName ?? 'Tipo';
   const typeIcon = getTypeIcon(typeName);
+  const typeColor = TYPE_COLORS[typeName] ?? accentColor;
 
   return (
     <View className="rounded-lg bg-white p-4 shadow-lg shadow-beasts-ink/10">
@@ -446,7 +455,7 @@ function BattleCreatureCard({
             {username} · {teamName}
           </Text>
         </View>
-        <View className="min-h-11 min-w-11 items-center justify-center rounded-lg px-2" style={{ backgroundColor: accentColor }}>
+        <View className="min-h-11 min-w-11 items-center justify-center rounded-lg px-2" style={{ backgroundColor: typeColor }}>
           <Ionicons name={typeIcon} size={20} color="#ffffff" />
           <Text className="mt-0.5 text-[9px] font-extrabold uppercase text-white" numberOfLines={1}>
             {typeName}
