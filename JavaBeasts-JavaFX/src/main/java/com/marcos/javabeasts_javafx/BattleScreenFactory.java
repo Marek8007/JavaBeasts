@@ -15,6 +15,7 @@ import javafx.scene.layout.BorderPane;
 import javafx.scene.layout.HBox;
 import javafx.scene.layout.Priority;
 import javafx.scene.layout.Region;
+import javafx.scene.layout.StackPane;
 import javafx.scene.layout.VBox;
 import javafx.scene.text.Font;
 import javafx.scene.text.FontWeight;
@@ -205,20 +206,13 @@ public final class BattleScreenFactory {
         activeJaBeaLabel.setFont(Font.font(16));
         activeJaBeaLabel.setStyle("-fx-text-fill: #cbd5e1;");
 
-        String hpText = activeJaBea != null
-                ? "Vida: " + safeInteger(activeJaBea.getCurrentHealth()) + " / " + safeInteger(activeJaBea.getMaxHealth())
-                : "Vida: -- / --";
-        Label hpLabel = new Label(hpText);
-        hpLabel.setFont(Font.font("System", FontWeight.BOLD, 18));
-        hpLabel.setStyle("-fx-text-fill: #86efac;");
-
         Region spacer = new Region();
         VBox.setVgrow(spacer, Priority.ALWAYS);
 
         HBox creatureRow = new HBox(18, jaBeaImage, new VBox(6, teamLabel, activeJaBeaLabel));
         creatureRow.setAlignment(Pos.CENTER_LEFT);
 
-        VBox panel = new VBox(12, slotLabel, usernameLabel, creatureRow, spacer, hpLabel);
+        VBox panel = new VBox(12, slotLabel, usernameLabel, creatureRow, spacer, createHealthBar(activeJaBea));
         panel.setAlignment(Pos.TOP_LEFT);
         panel.setPadding(new Insets(24));
         panel.setPrefWidth(420);
@@ -262,6 +256,59 @@ public final class BattleScreenFactory {
         return winnerUsername != null && !winnerUsername.isBlank()
                 ? "Ganador: " + winnerUsername
                 : "Combate finalizado";
+    }
+
+    private static VBox createHealthBar(BattleCreatureSnapshotData activeJaBea) {
+        int currentHealth = activeJaBea != null && activeJaBea.getCurrentHealth() != null
+                ? activeJaBea.getCurrentHealth()
+                : 0;
+        int maxHealth = activeJaBea != null && activeJaBea.getMaxHealth() != null && activeJaBea.getMaxHealth() > 0
+                ? activeJaBea.getMaxHealth()
+                : 1;
+        double healthRatio = Math.max(0, Math.min(1, (double) currentHealth / maxHealth));
+
+        Label hpLabel = new Label("Vida: " + currentHealth + " / " + maxHealth);
+        hpLabel.setFont(Font.font("System", FontWeight.BOLD, 16));
+        hpLabel.setStyle("-fx-text-fill: #e2e8f0;");
+
+        Region track = new Region();
+        track.setMinHeight(18);
+        track.setPrefHeight(18);
+        track.setMaxWidth(Double.MAX_VALUE);
+        track.setStyle(
+                "-fx-background-color: rgba(15, 23, 42, 0.95);" +
+                "-fx-background-radius: 999;"
+        );
+
+        Region fill = new Region();
+        fill.setMinHeight(18);
+        fill.setPrefHeight(18);
+        fill.setMaxWidth(Double.MAX_VALUE);
+        fill.prefWidthProperty().bind(track.widthProperty().multiply(healthRatio));
+        fill.setStyle(
+                "-fx-background-color: " + healthColor(healthRatio) + ";" +
+                "-fx-background-radius: 999;"
+        );
+
+        StackPane bar = new StackPane(track, fill);
+        bar.setAlignment(Pos.CENTER_LEFT);
+        bar.setMaxWidth(Double.MAX_VALUE);
+
+        VBox box = new VBox(8, hpLabel, bar);
+        box.setMaxWidth(Double.MAX_VALUE);
+        return box;
+    }
+
+    private static String healthColor(double healthRatio) {
+        if (healthRatio <= 0.25) {
+            return "#ef4444";
+        }
+
+        if (healthRatio <= 0.5) {
+            return "#f59e0b";
+        }
+
+        return "#22c55e";
     }
 
     private static ImageView createJaBeaImage(String jaBeaName, double size) {
