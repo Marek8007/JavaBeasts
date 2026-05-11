@@ -42,6 +42,7 @@ public class JavaBeastsLobbyApp extends Application {
     private Label matchStatusLabel;
     private Label connectionLabel;
     private HBox playersRow;
+    private Scene lobbyScene;
     private boolean matchReady;
     private boolean battleScreenShown;
     private String currentBattleRoomCode;
@@ -88,9 +89,9 @@ public class JavaBeastsLobbyApp extends Application {
         root.setPadding(new Insets(32));
         root.setStyle("-fx-background-color: linear-gradient(to bottom right, #111827, #1f2937);");
 
-        Scene scene = new Scene(root, 960, 540);
+        lobbyScene = new Scene(root, 960, 540);
         stage.setTitle("JavaBeasts");
-        stage.setScene(scene);
+        stage.setScene(lobbyScene);
         stage.setMinWidth(720);
         stage.setMinHeight(420);
         stage.show();
@@ -212,11 +213,26 @@ public class JavaBeastsLobbyApp extends Application {
         }
 
         try {
+            RoomStatusData roomStatus = lobbyTcpClient.fetchRoomStatus();
+            if (!roomStatus.isCanStart()) {
+                Platform.runLater(() -> returnToLobby(roomStatus));
+                return;
+            }
+
             BattleSnapshotData snapshot = battleTcpClient.fetchInitialSnapshot(currentBattleRoomCode);
             Platform.runLater(() -> showBattleScreen(snapshot));
         } catch (Exception ignored) {
             // Keep the last visible battle state and let the next polling cycle try again.
         }
+    }
+
+    private void returnToLobby(RoomStatusData roomStatus) {
+        battleScreenShown = false;
+        matchReady = false;
+        currentBattleRoomCode = null;
+        primaryStage.setScene(lobbyScene);
+        primaryStage.setTitle("JavaBeasts");
+        applyRoomStatus(roomStatus);
     }
 
     private void showBattleScreen(BattleSnapshotData snapshot) {
