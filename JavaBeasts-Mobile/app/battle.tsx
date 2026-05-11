@@ -1,5 +1,6 @@
 import { getBattleSnapshotAction, submitBattleActionAction } from '@/actions/battle.actions';
 import { getTeamCompositionAction } from '@/actions/team-composition.actions';
+import { getJaBeaImage } from '@/constants/jabea-images';
 import {
   BattleActionSubmissionResponse,
   BattleCreatureSnapshotResponse,
@@ -10,10 +11,12 @@ import { MoveSummaryResponse, TeamSlotResponse } from '@/interfaces/team-composi
 import { useAuthStore } from '@/stores/authStore';
 import { useLobbyStore } from '@/stores/lobbyStore';
 import { Ionicons } from '@expo/vector-icons';
+import { ComponentProps } from 'react';
 import { router } from 'expo-router';
 import { useEffect, useMemo, useState } from 'react';
 import {
   ActivityIndicator,
+  Image,
   Pressable,
   RefreshControl,
   SafeAreaView,
@@ -29,6 +32,8 @@ interface SwitchOption {
   name: string;
   typeName?: string | null;
 }
+
+type IoniconName = ComponentProps<typeof Ionicons>['name'];
 
 export default function BattleScreen() {
   const user = useAuthStore((state) => state.user);
@@ -341,10 +346,19 @@ export default function BattleScreen() {
                   disabled={actionLoading || currentPlayerActionSubmitted || snapshot.finished}
                   onPress={() => void submitSwitch(option.slot)}>
                   <View>
-                    <Text className="text-lg font-extrabold text-[#7c3aed]">{option.name}</Text>
-                    <Text className="mt-1 text-sm font-semibold text-beasts-muted">
-                      Slot {option.slot}{option.typeName ? ` · ${option.typeName}` : ''}
-                    </Text>
+                    <View className="flex-row items-center gap-3">
+                      <Image
+                        className="h-10 w-10"
+                        resizeMode="contain"
+                        source={getJaBeaImage(option.name)}
+                      />
+                      <View>
+                        <Text className="text-lg font-extrabold text-[#7c3aed]">{option.name}</Text>
+                        <Text className="mt-1 text-sm font-semibold text-beasts-muted">
+                          Slot {option.slot}{option.typeName ? ` · ${option.typeName}` : ''}
+                        </Text>
+                      </View>
+                    </View>
                   </View>
                   {actionLoading ? (
                     <ActivityIndicator color="#7c3aed" />
@@ -414,9 +428,17 @@ function BattleCreatureCard({
   teamName: string;
   username: string;
 }) {
+  const typeName = creature.moves?.[0]?.typeName ?? 'Tipo';
+  const typeIcon = getTypeIcon(typeName);
+
   return (
     <View className="rounded-lg bg-white p-4 shadow-lg shadow-beasts-ink/10">
       <View className="flex-row items-center justify-between gap-3">
+        <Image
+          className="mr-1 h-20 w-20"
+          resizeMode="contain"
+          source={getJaBeaImage(creature.name)}
+        />
         <View className="flex-1">
           <Text className="text-xs font-extrabold uppercase text-beasts-muted">{label}</Text>
           <Text className="mt-1 text-lg font-extrabold text-beasts-ink">{creature.name}</Text>
@@ -424,8 +446,11 @@ function BattleCreatureCard({
             {username} · {teamName}
           </Text>
         </View>
-        <View className="h-11 w-11 items-center justify-center rounded-lg" style={{ backgroundColor: accentColor }}>
-          <Ionicons name="paw-outline" size={24} color="#ffffff" />
+        <View className="min-h-11 min-w-11 items-center justify-center rounded-lg px-2" style={{ backgroundColor: accentColor }}>
+          <Ionicons name={typeIcon} size={20} color="#ffffff" />
+          <Text className="mt-0.5 text-[9px] font-extrabold uppercase text-white" numberOfLines={1}>
+            {typeName}
+          </Text>
         </View>
       </View>
       <View className="mt-4">
@@ -447,4 +472,19 @@ function BattleCreatureCard({
       </View>
     </View>
   );
+}
+
+function getTypeIcon(typeName?: string | null): IoniconName {
+  switch (typeName) {
+    case 'Agua':
+      return 'water-outline';
+    case 'Electrico':
+      return 'flash-outline';
+    case 'Fuego':
+      return 'flame-outline';
+    case 'Planta':
+      return 'leaf-outline';
+    default:
+      return 'radio-button-off-outline';
+  }
 }
