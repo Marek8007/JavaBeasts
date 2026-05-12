@@ -10,6 +10,7 @@ import {
   JaBeaMoveResponse,
 } from '@/interfaces/jabea.interface';
 import { TeamCompositionResponse, TeamSlotResponse } from '@/interfaces/team-composition.interface';
+import { getJaBeaImage } from '@/constants/jabea-images';
 import { useAuthStore } from '@/stores/authStore';
 import { Ionicons } from '@expo/vector-icons';
 import { router, useLocalSearchParams } from 'expo-router';
@@ -18,6 +19,7 @@ import {
   ActivityIndicator,
   Alert,
   FlatList,
+  Image,
   Modal,
   Pressable,
   RefreshControl,
@@ -478,7 +480,11 @@ function TeamSlotCard({
     <View className="rounded-lg bg-white px-4 py-3">
       <View className="flex-row items-center">
         <View className="mr-3 h-12 w-12 items-center justify-center rounded-lg bg-beasts-blue">
-          <Text className="text-base font-extrabold text-white">{slot.slot}</Text>
+          <Image
+            className="h-10 w-10"
+            resizeMode="contain"
+            source={getJaBeaImage(member.name)}
+          />
         </View>
         <View className="flex-1">
           <Text className="text-base font-extrabold text-beasts-ink" numberOfLines={1}>
@@ -524,6 +530,11 @@ function JaBeaPickerRow({
   return (
     <View className={`overflow-hidden rounded-lg border ${typeStyle.border} ${typeStyle.row}`}>
       <Pressable className="min-h-[76px] flex-row items-center px-4 py-3 active:opacity-80" onPress={onPress}>
+        <Image
+          className="mr-3 h-12 w-12"
+          resizeMode="contain"
+          source={getJaBeaImage(jaBea.name)}
+        />
         <View className={`mr-3 rounded-lg px-3 py-2 ${typeStyle.badge}`}>
           <Text className={`text-xs font-extrabold uppercase ${typeStyle.text}`}>{jaBea.typeName}</Text>
         </View>
@@ -581,6 +592,11 @@ function SlotMoveEditor({
 
       <View className={`rounded-lg border ${typeStyle.border} ${typeStyle.row} p-4`}>
         <View className="flex-row items-center justify-between gap-3">
+          <Image
+            className="h-16 w-16"
+            resizeMode="contain"
+            source={getJaBeaImage(selectedJaBea.name)}
+          />
           <View className="flex-1">
             <Text className="text-xl font-extrabold text-beasts-ink" numberOfLines={1}>
               {selectedJaBea.name}

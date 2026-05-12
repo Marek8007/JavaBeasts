@@ -1,5 +1,7 @@
 package com.marcos.javabeasts_javafx;
 
+import com.marcos.javabeasts_javafx.battle.BattleTcpClient;
+import com.marcos.javabeasts_javafx.battle.BattleSnapshotData;
 import com.marcos.javabeasts_javafx.socket.LobbyTcpClient;
 import com.marcos.javabeasts_javafx.socket.RoomStatusData;
 import com.marcos.javabeasts_javafx.socket.RoomStatusPlayer;
@@ -18,6 +20,7 @@ import javafx.scene.text.Font;
 import javafx.scene.text.FontWeight;
 import javafx.stage.Stage;
 
+import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
@@ -29,6 +32,7 @@ public class JavaBeastsLobbyApp extends Application {
     private static final long REFRESH_INTERVAL_SECONDS = 2;
 
     private final LobbyTcpClient lobbyTcpClient = new LobbyTcpClient(resolveLobbyHost(), resolveLobbyPort());
+    private final BattleTcpClient battleTcpClient = new BattleTcpClient(resolveLobbyHost(), resolveLobbyPort());
     private final ScheduledExecutorService scheduler = Executors.newSingleThreadScheduledExecutor();
 
     private Label roomCodeLabel;
@@ -38,8 +42,11 @@ public class JavaBeastsLobbyApp extends Application {
     private Label matchStatusLabel;
     private Label connectionLabel;
     private HBox playersRow;
+    private Scene lobbyScene;
+    private BattleScreenFactory.BattleSceneView battleSceneView;
     private boolean matchReady;
     private boolean battleScreenShown;
+    private String currentBattleRoomCode;
     private Stage primaryStage;
 
     @Override
@@ -83,9 +90,9 @@ public class JavaBeastsLobbyApp extends Application {
         root.setPadding(new Insets(32));
         root.setStyle("-fx-background-color: linear-gradient(to bottom right, #111827, #1f2937);");
 
-        Scene scene = new Scene(root, 960, 540);
+        lobbyScene = new Scene(root, 960, 540);
         stage.setTitle("JavaBeasts");
-        stage.setScene(scene);
+        stage.setScene(lobbyScene);
         stage.setMinWidth(720);
         stage.setMinHeight(420);
         stage.show();
@@ -110,6 +117,7 @@ public class JavaBeastsLobbyApp extends Application {
 
     private void refreshLobbyState() {
         if (battleScreenShown) {
+            refreshBattleState();
             return;
         }
 
@@ -177,12 +185,70 @@ public class JavaBeastsLobbyApp extends Application {
 
         if (!battleScreenShown) {
             battleScreenShown = true;
-            scheduler.shutdownNow();
-            showBattleScreen(roomStatus);
+            loadAndShowBattleScreen(roomStatus);
         }
     }
 
-    private void showBattleScreen(RoomStatusData roomStatus) {
+    private void loadAndShowBattleScreen(RoomStatusData roomStatus) {
+        currentBattleRoomCode = safeRoomCode(roomStatus);
+        CompletableFuture
+                .supplyAsync(() -> fetchBattleSnapshot(roomStatus))
+                .thenAccept(snapshot -> Platform.runLater(() -> showBattleScreen(snapshot)))
+                .exceptionally(exception -> {
+                    Platform.runLater(() -> showFallbackBattleScreen(roomStatus));
+                    return null;
+                });
+    }
+
+    private BattleSnapshotData fetchBattleSnapshot(RoomStatusData roomStatus) {
+        try {
+            return battleTcpClient.fetchInitialSnapshot(safeRoomCode(roomStatus));
+        } catch (Exception e) {
+            throw new IllegalStateException("No se pudo cargar el snapshot inicial del combate", e);
+        }
+    }
+
+    private void refreshBattleState() {
+        if (currentBattleRoomCode == null || currentBattleRoomCode.isBlank()) {
+            return;
+        }
+
+        try {
+            RoomStatusData roomStatus = lobbyTcpClient.fetchRoomStatus();
+            if (!roomStatus.isCanStart()) {
+                Platform.runLater(() -> returnToLobby(roomStatus));
+                return;
+            }
+
+            BattleSnapshotData snapshot = battleTcpClient.fetchInitialSnapshot(currentBattleRoomCode);
+            Platform.runLater(() -> showBattleScreen(snapshot));
+        } catch (Exception ignored) {
+            // Keep the last visible battle state and let the next polling cycle try again.
+        }
+    }
+
+    private void returnToLobby(RoomStatusData roomStatus) {
+        battleScreenShown = false;
+        matchReady = false;
+        currentBattleRoomCode = null;
+        battleSceneView = null;
+        primaryStage.setScene(lobbyScene);
+        primaryStage.setTitle("JavaBeasts");
+        applyRoomStatus(roomStatus);
+    }
+
+    private void showBattleScreen(BattleSnapshotData snapshot) {
+        if (battleSceneView == null) {
+            battleSceneView = BattleScreenFactory.createBattleSceneView(snapshot);
+            primaryStage.setScene(battleSceneView.getScene());
+        } else {
+            battleSceneView.update(snapshot);
+        }
+        primaryStage.setTitle("JavaBeasts - Combate");
+    }
+
+    private void showFallbackBattleScreen(RoomStatusData roomStatus) {
+        battleSceneView = null;
         Scene battleScene = BattleScreenFactory.createBattleScene(roomStatus);
         primaryStage.setScene(battleScene);
         primaryStage.setTitle("JavaBeasts - Combate");

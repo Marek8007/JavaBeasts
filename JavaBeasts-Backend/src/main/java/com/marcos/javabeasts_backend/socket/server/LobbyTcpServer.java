@@ -1,6 +1,8 @@
 package com.marcos.javabeasts_backend.socket.server;
 
 import com.google.gson.Gson;
+import com.marcos.javabeasts_backend.services.battle.BattleSessionService;
+import com.marcos.javabeasts_backend.services.battle.BattleSetupService;
 import com.marcos.javabeasts_backend.socket.lobby.LobbyRoomService;
 import jakarta.annotation.PreDestroy;
 import org.springframework.beans.factory.annotation.Value;
@@ -15,6 +17,8 @@ import java.net.Inet4Address;
 public class LobbyTcpServer {
 
     private final LobbyRoomService lobbyRoomService;
+    private final BattleSetupService battleSetupService;
+    private final BattleSessionService battleSessionService;
     private final Gson gson = new Gson();
 
     @Value("${app.socket.port}")
@@ -24,8 +28,14 @@ public class LobbyTcpServer {
     private ServerSocket serverSocket;
     private Thread acceptThread;
 
-    public LobbyTcpServer(LobbyRoomService lobbyRoomService) {
+    public LobbyTcpServer(
+            LobbyRoomService lobbyRoomService,
+            BattleSetupService battleSetupService,
+            BattleSessionService battleSessionService
+    ) {
         this.lobbyRoomService = lobbyRoomService;
+        this.battleSetupService = battleSetupService;
+        this.battleSessionService = battleSessionService;
     }
 
     public synchronized void start() {
@@ -47,7 +57,7 @@ public class LobbyTcpServer {
             while (running) {
                 Socket clientSocket = server.accept();
                 Thread handlerThread = new Thread(
-                        new LobbyClientHandler(clientSocket, lobbyRoomService, gson),
+                        new LobbyClientHandler(clientSocket, lobbyRoomService, battleSetupService, battleSessionService, gson),
                         "lobby-client-" + clientSocket.getPort()
                 );
                 handlerThread.start();

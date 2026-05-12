@@ -10,6 +10,7 @@ import { useAuthStore } from '@/stores/authStore';
 import { useLobbyStore } from '@/stores/lobbyStore';
 import { Ionicons } from '@expo/vector-icons';
 import { useFocusEffect } from '@react-navigation/native';
+import { router } from 'expo-router';
 import { useCallback, useEffect, useState } from 'react';
 import {
   ActivityIndicator,
@@ -41,6 +42,7 @@ export default function RoomJoinScreen() {
   );
   const ready = Boolean(currentPlayer?.ready);
   const joined = Boolean(roomStatus);
+  const isCombatReady = Boolean(roomStatus?.canStart);
 
   const loadActiveTeam = useCallback(async () => {
     if (!user) {
@@ -96,6 +98,12 @@ export default function RoomJoinScreen() {
       clearInterval(intervalId);
     };
   }, [roomStatus, setRoomStatus]);
+
+  useEffect(() => {
+    if (roomStatus?.canStart) {
+      router.replace('/battle');
+    }
+  }, [roomStatus?.canStart]);
 
   function updateRoomCode(value: string) {
     if (joined) {
@@ -291,39 +299,53 @@ export default function RoomJoinScreen() {
                     username={roomStatus.playerTwo?.username}
                   />
                 </View>
-                <Pressable
-                  className={`min-h-11 flex-row items-center justify-center gap-2 rounded-lg px-4 active:opacity-80 ${
-                    ready ? 'bg-[#15803d]' : 'border border-[#15803d] bg-white'
-                  } ${settingReady || (!ready && !activeTeam) ? 'opacity-45' : ''}`}
-                  disabled={settingReady || (!ready && !activeTeam)}
-                  onPress={() => void toggleReady()}>
-                  {settingReady ? (
-                    <ActivityIndicator color={ready ? '#ffffff' : '#15803d'} />
-                  ) : (
-                    <>
-                      <Ionicons
-                        name={ready ? 'checkmark-circle' : 'checkmark-circle-outline'}
-                        size={20}
-                        color={ready ? '#ffffff' : '#15803d'}
-                      />
-                      <Text className={`text-sm font-extrabold ${ready ? 'text-white' : 'text-[#15803d]'}`}>
-                        {ready ? 'Listo' : 'Marcar listo'}
-                      </Text>
-                    </>
-                  )}
-                </Pressable>
-                <Pressable
-                  className={`min-h-11 items-center justify-center rounded-lg border border-[#bb3e03] bg-white px-4 active:opacity-80 ${
-                    leaving || ready ? 'opacity-45' : ''
-                  }`}
-                  disabled={leaving || ready}
-                  onPress={() => void leaveRoom()}>
-                  {leaving ? (
-                    <ActivityIndicator color="#bb3e03" />
-                  ) : (
-                    <Text className="text-sm font-extrabold text-[#bb3e03]">Salir de la sala</Text>
-                  )}
-                </Pressable>
+                {isCombatReady ? (
+                  <View className="gap-3 rounded-lg border border-[#dbeafe] bg-[#eff6ff] p-3">
+                    <View className="flex-row items-center gap-2">
+                      <Ionicons name="flash-outline" size={20} color="#1d4ed8" />
+                      <Text className="flex-1 text-base font-extrabold text-[#1d4ed8]">Combate iniciado</Text>
+                    </View>
+                    <Text className="text-sm font-semibold leading-5 text-beasts-muted">
+                      Cambiando a la pantalla de combate.
+                    </Text>
+                  </View>
+                ) : (
+                  <>
+                    <Pressable
+                      className={`min-h-11 flex-row items-center justify-center gap-2 rounded-lg px-4 active:opacity-80 ${
+                        ready ? 'bg-[#15803d]' : 'border border-[#15803d] bg-white'
+                      } ${settingReady || (!ready && !activeTeam) ? 'opacity-45' : ''}`}
+                      disabled={settingReady || (!ready && !activeTeam)}
+                      onPress={() => void toggleReady()}>
+                      {settingReady ? (
+                        <ActivityIndicator color={ready ? '#ffffff' : '#15803d'} />
+                      ) : (
+                        <>
+                          <Ionicons
+                            name={ready ? 'checkmark-circle' : 'checkmark-circle-outline'}
+                            size={20}
+                            color={ready ? '#ffffff' : '#15803d'}
+                          />
+                          <Text className={`text-sm font-extrabold ${ready ? 'text-white' : 'text-[#15803d]'}`}>
+                            {ready ? 'Listo' : 'Marcar listo'}
+                          </Text>
+                        </>
+                      )}
+                    </Pressable>
+                    <Pressable
+                      className={`min-h-11 items-center justify-center rounded-lg border border-[#bb3e03] bg-white px-4 active:opacity-80 ${
+                        leaving || ready ? 'opacity-45' : ''
+                      }`}
+                      disabled={leaving || ready}
+                      onPress={() => void leaveRoom()}>
+                      {leaving ? (
+                        <ActivityIndicator color="#bb3e03" />
+                      ) : (
+                        <Text className="text-sm font-extrabold text-[#bb3e03]">Salir de la sala</Text>
+                      )}
+                    </Pressable>
+                  </>
+                )}
               </View>
             ) : null}
 
