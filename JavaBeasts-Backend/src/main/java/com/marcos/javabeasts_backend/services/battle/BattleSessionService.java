@@ -13,6 +13,7 @@ import org.springframework.web.server.ResponseStatusException;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ThreadLocalRandom;
+import java.util.List;
 
 @Service
 public class BattleSessionService {
@@ -137,23 +138,23 @@ public class BattleSessionService {
         BattlePlayerSnapshotResponse updatedPlayerTwo = playerTwo;
 
         if (playerOneAction.actionType() == BattleActionType.SWITCH) {
-            updatedPlayerOne = applyAttack(playerTwo, updatedPlayerOne, playerTwoAction, resolution);
+            updatedPlayerOne = applyAttack(session, playerTwo, updatedPlayerOne, playerTwoAction, resolution);
             updatedPlayerTwo = playerTwo;
         } else if (playerTwoAction.actionType() == BattleActionType.SWITCH) {
             updatedPlayerOne = playerOne;
-            updatedPlayerTwo = applyAttack(playerOne, updatedPlayerTwo, playerOneAction, resolution);
+            updatedPlayerTwo = applyAttack(session, playerOne, updatedPlayerTwo, playerOneAction, resolution);
         } else {
             boolean playerOneActsFirst = actsFirst(playerOneCreature, playerTwoCreature);
 
             if (playerOneActsFirst) {
-                updatedPlayerTwo = applyAttack(playerOne, updatedPlayerTwo, playerOneAction, resolution);
+                updatedPlayerTwo = applyAttack(session, playerOne, updatedPlayerTwo, playerOneAction, resolution);
                 if (updatedPlayerTwo.activeJaBea().currentHealth() > 0) {
-                    updatedPlayerOne = applyAttack(playerTwo, updatedPlayerOne, playerTwoAction, resolution);
+                    updatedPlayerOne = applyAttack(session, playerTwo, updatedPlayerOne, playerTwoAction, resolution);
                 }
             } else {
-                updatedPlayerOne = applyAttack(playerTwo, updatedPlayerOne, playerTwoAction, resolution);
+                updatedPlayerOne = applyAttack(session, playerTwo, updatedPlayerOne, playerTwoAction, resolution);
                 if (updatedPlayerOne.activeJaBea().currentHealth() > 0) {
-                    updatedPlayerTwo = applyAttack(playerOne, updatedPlayerTwo, playerOneAction, resolution);
+                    updatedPlayerTwo = applyAttack(session, playerOne, updatedPlayerTwo, playerOneAction, resolution);
                 }
             }
         }
@@ -301,6 +302,7 @@ public class BattleSessionService {
     }
 
     private BattlePlayerSnapshotResponse applyAttack(
+            BattleSession session,
             BattlePlayerSnapshotResponse attacker,
             BattlePlayerSnapshotResponse defender,
             BattleTurnAction action,
@@ -354,7 +356,8 @@ public class BattleSessionService {
                 defender.username(),
                 defender.teamId(),
                 defender.teamName(),
-                updatedCreature
+                updatedCreature,
+                buildTeamCreaturesSnapshot(session, defender.username(), defender.teamId(), updatedCreature)
         );
     }
 
@@ -382,7 +385,8 @@ public class BattleSessionService {
                 player.username(),
                 player.teamId(),
                 player.teamName(),
-                activeCreature
+                activeCreature,
+                buildTeamCreaturesSnapshot(session, player.username(), player.teamId(), activeCreature)
         );
     }
 
@@ -430,6 +434,26 @@ public class BattleSessionService {
                 creature.speed(),
                 creature.moves()
         );
+    }
+
+    private List<BattleCreatureSnapshotResponse> buildTeamCreaturesSnapshot(
+            BattleSession session,
+            String username,
+            Integer teamId,
+            BattleCreatureSnapshotResponse activeCreature
+    ) {
+        return battleSetupService.buildTeamCreatureSnapshots(teamId)
+                .stream()
+                .map(creature -> {
+                    if (activeCreature != null && activeCreature.slot() != null && activeCreature.slot().equals(creature.slot())) {
+                        return activeCreature;
+                    }
+
+                    int currentHealth = session.getStoredHealth(username, creature.slot())
+                            .orElse(creature.maxHealth() != null ? creature.maxHealth() : 0);
+                    return withCurrentHealth(creature, currentHealth);
+                })
+                .toList();
     }
 
     private BattleMoveSnapshotResponse findSelectedMove(BattleCreatureSnapshotResponse attacker, Integer moveSlot) {
