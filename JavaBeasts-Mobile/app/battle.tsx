@@ -1,3 +1,4 @@
+import { getProfileAction } from '@/actions/auth.actions';
 import { getBattleSnapshotAction, resetBattleAction, submitBattleActionAction } from '@/actions/battle.actions';
 import { getTeamCompositionAction } from '@/actions/team-composition.actions';
 import { getJaBeaImage } from '@/constants/jabea-images';
@@ -48,6 +49,7 @@ const TYPE_COLORS: Record<string, string> = {
 
 export default function BattleScreen() {
   const user = useAuthStore((state) => state.user);
+  const updateUser = useAuthStore((state) => state.updateUser);
   const roomStatus = useLobbyStore((state) => state.roomStatus);
   const setRoomStatus = useLobbyStore((state) => state.setRoomStatus);
   const [snapshot, setSnapshot] = useState<BattleSnapshotResponse | null>(null);
@@ -272,6 +274,10 @@ export default function BattleScreen() {
 
     try {
       const status = await resetBattleAction(roomStatus.roomCode);
+      if (user?.username) {
+        const refreshedUser = await getProfileAction(user.username);
+        await updateUser(refreshedUser);
+      }
       setRoomStatus(status);
       setSnapshot(null);
       setActionState(null);

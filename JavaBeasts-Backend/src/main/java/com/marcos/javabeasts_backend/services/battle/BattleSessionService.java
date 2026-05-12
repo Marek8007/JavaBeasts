@@ -6,8 +6,17 @@ import com.marcos.javabeasts_backend.dto.battle.BattleCreatureSnapshotResponse;
 import com.marcos.javabeasts_backend.dto.battle.BattleMoveSnapshotResponse;
 import com.marcos.javabeasts_backend.dto.battle.BattlePlayerSnapshotResponse;
 import com.marcos.javabeasts_backend.dto.battle.BattleSnapshotResponse;
+import com.marcos.javabeasts_backend.entity.JaBeasHistory;
+import com.marcos.javabeasts_backend.entity.JaBeasTeamed;
+import com.marcos.javabeasts_backend.entity.MatchHistory;
+import com.marcos.javabeasts_backend.entity.User;
+import com.marcos.javabeasts_backend.repositories.JaBeasHistoryRepository;
+import com.marcos.javabeasts_backend.repositories.JaBeasTeamedRepository;
+import com.marcos.javabeasts_backend.repositories.MatchHistoryRepository;
+import com.marcos.javabeasts_backend.repositories.UserRepository;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.server.ResponseStatusException;
 
 import java.util.Map;
@@ -24,12 +33,27 @@ public class BattleSessionService {
     private static final int MAX_SWITCH_SLOT = 4;
 
     private final BattleSetupService battleSetupService;
+    private final UserRepository userRepository;
+    private final MatchHistoryRepository matchHistoryRepository;
+    private final JaBeasTeamedRepository jaBeasTeamedRepository;
+    private final JaBeasHistoryRepository jaBeasHistoryRepository;
     private final Map<String, BattleSession> sessionsByRoomCode = new ConcurrentHashMap<>();
 
-    public BattleSessionService(BattleSetupService battleSetupService) {
+    public BattleSessionService(
+            BattleSetupService battleSetupService,
+            UserRepository userRepository,
+            MatchHistoryRepository matchHistoryRepository,
+            JaBeasTeamedRepository jaBeasTeamedRepository,
+            JaBeasHistoryRepository jaBeasHistoryRepository
+    ) {
         this.battleSetupService = battleSetupService;
+        this.userRepository = userRepository;
+        this.matchHistoryRepository = matchHistoryRepository;
+        this.jaBeasTeamedRepository = jaBeasTeamedRepository;
+        this.jaBeasHistoryRepository = jaBeasHistoryRepository;
     }
 
+    @Transactional
     public BattleActionSubmissionResponse submitAction(BattleActionRequest request) {
         validateRequest(request);
 
@@ -199,6 +223,9 @@ public class BattleSessionService {
 
         session.updateSnapshot(nextSnapshot);
         session.completeTurn(message);
+        if (finished) {
+            persistMatchResultIfNeeded(session, nextSnapshot);
+        }
     }
 
     private void validateRequest(BattleActionRequest request) {
@@ -289,6 +316,7 @@ public class BattleSessionService {
 
         session.updateSnapshot(nextSnapshot);
         session.completeTurn(message);
+        persistMatchResultIfNeeded(session, nextSnapshot);
     }
 
     private boolean actsFirst(BattleCreatureSnapshotResponse playerOneCreature, BattleCreatureSnapshotResponse playerTwoCreature) {
@@ -539,6 +567,63 @@ public class BattleSessionService {
         }
 
         return typeName.trim().toLowerCase();
+    }
+
+    private void persistMatchResultIfNeeded(BattleSession session, BattleSnapshotResponse snapshot) {
+        if (session.isResultPersisted() || snapshot == null || !snapshot.finished()) {
+            return;
+        }
+
+        if (snapshot.winnerUsername() == null || snapshot.winnerUsername().isBlank()) {
+            session.markResultPersisted();
+            return;
+        }
+
+        BattlePlayerSnapshotResponse winnerSnapshot = snapshot.playerOne().username().equals(snapshot.winnerUsername())
+                ? snapshot.playerOne()
+                : snapshot.playerTwo();
+        BattlePlayerSnapshotResponse loserSnapshot = snapshot.playerOne().username().equals(snapshot.winnerUsername())
+                ? snapshot.playerTwo()
+                : snapshot.playerOne();
+
+        User winner = userRepository.findById(winnerSnapshot.userId())
+                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Ganador no encontrado"));
+        User loser = userRepository.findById(loserSnapshot.userId())
+                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Perdedor no encontrado"));
+
+        winner.setMatchesWon(winner.getMatchesWon() + 1);
+        loser.setMatchesLost(loser.getMatchesLost() + 1);
+        userRepository.save(winner);
+        userRepository.save(loser);
+
+        MatchHistory matchHistory = new MatchHistory();
+        matchHistory.setWinner(winner);
+        matchHistory.setLoser(loser);
+        matchHistory.setTurns(Math.max(1, session.getTurnNumber()));
+        MatchHistory savedMatch = matchHistoryRepository.save(matchHistory);
+
+        saveTeamHistory(savedMatch, winnerSnapshot, winner);
+        saveTeamHistory(savedMatch, loserSnapshot, loser);
+
+        session.markResultPersisted();
+    }
+
+    private void saveTeamHistory(MatchHistory matchHistory, BattlePlayerSnapshotResponse playerSnapshot, User owner) {
+        List<JaBeasTeamed> teamMembers = jaBeasTeamedRepository.findByTeamTeamIdOrderByIdSlotAsc(playerSnapshot.teamId());
+        for (JaBeasTeamed teamMember : teamMembers) {
+            if (teamMember.getJaBeas() == null || teamMember.getMove1() == null || teamMember.getMove2() == null) {
+                continue;
+            }
+
+            JaBeasHistory jaBeasHistory = new JaBeasHistory();
+            jaBeasHistory.setMatch(matchHistory);
+            jaBeasHistory.setOwner(owner);
+            jaBeasHistory.setJaBeas(teamMember.getJaBeas());
+            jaBeasHistory.setMove1(teamMember.getMove1());
+            jaBeasHistory.setMove2(teamMember.getMove2());
+            jaBeasHistory.setSlot(teamMember.getSlot() != null ? teamMember.getSlot() : 0);
+            jaBeasHistoryRepository.save(jaBeasHistory);
+        }
     }
 
 }

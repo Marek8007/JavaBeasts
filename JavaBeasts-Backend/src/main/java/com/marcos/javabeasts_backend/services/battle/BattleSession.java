@@ -18,6 +18,7 @@ public class BattleSession {
     private BattleTurnAction playerTwoAction;
     private String lastResolutionMessage;
     private final Map<String, Map<Integer, Integer>> healthByPlayerSlot = new HashMap<>();
+    private boolean resultPersisted;
 
     public BattleSession(BattleSnapshotResponse initialSnapshot) {
         this.roomCode = initialSnapshot.roomCode();
@@ -111,6 +112,14 @@ public class BattleSession {
         healthByPlayerSlot
                 .computeIfAbsent(username, ignored -> new HashMap<>())
                 .put(creature.slot(), creature.currentHealth());
+    }
+
+    public boolean isResultPersisted() {
+        return resultPersisted;
+    }
+
+    public void markResultPersisted() {
+        this.resultPersisted = true;
     }
 
     private void rememberActiveCreatureHealth(BattleSnapshotResponse snapshot) {

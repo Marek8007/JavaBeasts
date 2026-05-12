@@ -9,6 +9,7 @@ interface AuthStore {
   hasLoadedSession: boolean;
   login: (user: AuthResponse) => Promise<void>;
   loadSession: () => Promise<void>;
+  updateUser: (user: AuthResponse) => Promise<void>;
   logout: () => Promise<void>;
 }
 
@@ -37,6 +38,11 @@ export const useAuthStore = create<AuthStore>((set) => ({
       await SecureStore.deleteItemAsync('user');
       set({ user: null, isAuthenticated: false, hasLoadedSession: true });
     }
+  },
+
+  updateUser: async (user) => {
+    await SecureStore.setItemAsync('user', JSON.stringify(user));
+    set({ user, isAuthenticated: true, hasLoadedSession: true });
   },
 
   logout: async () => {

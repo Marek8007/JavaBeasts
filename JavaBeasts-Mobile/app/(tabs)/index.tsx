@@ -1,13 +1,16 @@
-import { logoutAction } from '@/actions/auth.actions';
+import { getProfileAction, logoutAction } from '@/actions/auth.actions';
 import { leaveRoomAction } from '@/actions/lobby-socket.actions';
 import { useAuthStore } from '@/stores/authStore';
 import { useLobbyStore } from '@/stores/lobbyStore';
 import { Ionicons } from '@expo/vector-icons';
+import { useFocusEffect } from '@react-navigation/native';
 import { router } from 'expo-router';
+import { useCallback } from 'react';
 import { Alert, Pressable, SafeAreaView, Text, View } from 'react-native';
 
 export default function HomeScreen() {
   const user = useAuthStore((state) => state.user);
+  const updateUser = useAuthStore((state) => state.updateUser);
   const clearSession = useAuthStore((state) => state.logout);
   const roomStatus = useLobbyStore((state) => state.roomStatus);
   const clearRoom = useLobbyStore((state) => state.clearRoom);
@@ -37,6 +40,23 @@ export default function HomeScreen() {
       router.replace('/(auth)/login');
     }
   }
+
+  useFocusEffect(
+    useCallback(() => {
+      if (!user?.username) {
+        return;
+      }
+
+      void (async () => {
+        try {
+          const refreshedUser = await getProfileAction(user.username);
+          await updateUser(refreshedUser);
+        } catch {
+          // Keep the cached user values if the refresh fails.
+        }
+      })();
+    }, [user?.username, updateUser])
+  );
 
   return (
     <SafeAreaView className="flex-1 bg-beasts-soft">
