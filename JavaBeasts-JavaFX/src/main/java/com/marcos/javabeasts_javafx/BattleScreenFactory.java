@@ -5,10 +5,12 @@ import com.marcos.javabeasts_javafx.battle.BattlePlayerSnapshotData;
 import com.marcos.javabeasts_javafx.battle.BattleSnapshotData;
 import com.marcos.javabeasts_javafx.socket.RoomStatusData;
 import com.marcos.javabeasts_javafx.socket.RoomStatusPlayer;
+import javafx.beans.property.SimpleDoubleProperty;
 import javafx.geometry.Insets;
 import javafx.geometry.Pos;
 import javafx.scene.Scene;
 import javafx.scene.control.Label;
+import javafx.scene.control.ProgressBar;
 import javafx.scene.image.Image;
 import javafx.scene.image.ImageView;
 import javafx.scene.layout.BorderPane;
@@ -263,23 +265,10 @@ public final class BattleScreenFactory {
         hpLabel.setFont(Font.font("System", FontWeight.BOLD, 16));
         hpLabel.setStyle("-fx-text-fill: #e2e8f0;");
 
-        Region healthTrack = new Region();
-        healthTrack.setMinHeight(18);
-        healthTrack.setPrefHeight(18);
-        healthTrack.setMaxWidth(Double.MAX_VALUE);
-        healthTrack.setStyle(
-                "-fx-background-color: rgba(15, 23, 42, 0.95);" +
-                "-fx-background-radius: 999;"
-        );
-
-        Region healthFill = new Region();
-        healthFill.setMinHeight(18);
-        healthFill.setPrefHeight(18);
-        healthFill.setMaxWidth(Double.MAX_VALUE);
-
-        StackPane healthBar = new StackPane(healthTrack, healthFill);
-        healthBar.setAlignment(Pos.CENTER_LEFT);
+        ProgressBar healthBar = new ProgressBar(1);
         healthBar.setMaxWidth(Double.MAX_VALUE);
+        healthBar.setPrefHeight(18);
+        healthBar.setStyle("-fx-accent: #22c55e;");
 
         VBox healthBox = new VBox(8, hpLabel, healthBar);
         healthBox.setMaxWidth(Double.MAX_VALUE);
@@ -296,7 +285,7 @@ public final class BattleScreenFactory {
                 "-fx-border-color: rgba(148, 163, 184, 0.35);"
         );
 
-        return new BattlePlayerPanelView(panel, usernameLabel, teamLabel, jaBeaImage, activeJaBeaLabel, hpLabel, healthTrack, healthFill);
+        return new BattlePlayerPanelView(panel, usernameLabel, teamLabel, jaBeaImage, activeJaBeaLabel, hpLabel, healthBar);
     }
 
     private static String safeRoomCode(RoomStatusData roomStatus) {
@@ -470,8 +459,8 @@ public final class BattleScreenFactory {
         private final ImageView jaBeaImage;
         private final Label activeJaBeaLabel;
         private final Label hpLabel;
-        private final Region healthTrack;
-        private final Region healthFill;
+        private final ProgressBar healthBar;
+        private final SimpleDoubleProperty healthRatioProperty = new SimpleDoubleProperty(1);
 
         private BattlePlayerPanelView(
                 VBox root,
@@ -480,8 +469,7 @@ public final class BattleScreenFactory {
                 ImageView jaBeaImage,
                 Label activeJaBeaLabel,
                 Label hpLabel,
-                Region healthTrack,
-                Region healthFill
+                ProgressBar healthBar
         ) {
             this.root = root;
             this.usernameLabel = usernameLabel;
@@ -489,8 +477,8 @@ public final class BattleScreenFactory {
             this.jaBeaImage = jaBeaImage;
             this.activeJaBeaLabel = activeJaBeaLabel;
             this.hpLabel = hpLabel;
-            this.healthTrack = healthTrack;
-            this.healthFill = healthFill;
+            this.healthBar = healthBar;
+            this.healthBar.progressProperty().bind(healthRatioProperty);
         }
 
         public VBox getRoot() {
@@ -524,12 +512,8 @@ public final class BattleScreenFactory {
             double healthRatio = Math.max(0, Math.min(1, (double) currentHealth / maxHealth));
 
             hpLabel.setText("Vida: " + currentHealth + " / " + maxHealth);
-            healthFill.prefWidthProperty().unbind();
-            healthFill.prefWidthProperty().bind(healthTrack.widthProperty().multiply(healthRatio));
-            healthFill.setStyle(
-                    "-fx-background-color: " + healthColor(healthRatio) + ";" +
-                    "-fx-background-radius: 999;"
-            );
+            healthRatioProperty.set(healthRatio);
+            healthBar.setStyle("-fx-accent: " + healthColor(healthRatio) + ";");
         }
     }
 }
