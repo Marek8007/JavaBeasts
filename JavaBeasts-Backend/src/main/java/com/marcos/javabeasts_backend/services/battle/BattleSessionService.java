@@ -335,6 +335,13 @@ public class BattleSessionService {
                 .append(defender.username())
                 .append(". ");
 
+        double typeMultiplier = resolveTypeMultiplier(selectedMove.typeName(), defenderCreature.typeName());
+        if (typeMultiplier > 1d) {
+            resolution.append("Es muy eficaz. ");
+        } else if (typeMultiplier < 1d) {
+            resolution.append("No es muy eficaz. ");
+        }
+
         if (newHealth == 0) {
             resolution.append(defenderCreature.name()).append(" queda debilitado. ");
         }
@@ -343,6 +350,8 @@ public class BattleSessionService {
                 defenderCreature.slot(),
                 defenderCreature.jaBeasId(),
                 defenderCreature.name(),
+                defenderCreature.typeId(),
+                defenderCreature.typeName(),
                 newHealth,
                 defenderCreature.maxHealth(),
                 defenderCreature.damage(),
@@ -427,6 +436,8 @@ public class BattleSessionService {
                 creature.slot(),
                 creature.jaBeasId(),
                 creature.name(),
+                creature.typeId(),
+                creature.typeName(),
                 currentHealth,
                 creature.maxHealth(),
                 creature.damage(),
@@ -471,7 +482,9 @@ public class BattleSessionService {
     private int calculateDamage(BattleMoveSnapshotResponse move, BattleCreatureSnapshotResponse defender) {
         int moveDamage = move.damage() != null ? move.damage() : 0;
         int defenderDefence = defender.defence() != null ? defender.defence() : 0;
-        return Math.max(1, moveDamage - (defenderDefence / 2));
+        int baseDamage = Math.max(1, moveDamage - (defenderDefence / 2));
+        double multiplier = resolveTypeMultiplier(move.typeName(), defender.typeName());
+        return Math.max(1, (int) Math.round(baseDamage * multiplier));
     }
 
     private boolean moveHits(BattleMoveSnapshotResponse move) {
@@ -485,6 +498,47 @@ public class BattleSessionService {
         }
 
         return ThreadLocalRandom.current().nextInt(100) < accuracy;
+    }
+
+    private double resolveTypeMultiplier(String attackTypeName, String defenderTypeName) {
+        String attackType = normalizeTypeName(attackTypeName);
+        String defenderType = normalizeTypeName(defenderTypeName);
+
+        if (attackType == null || defenderType == null) {
+            return 1d;
+        }
+
+        return switch (attackType) {
+            case "fuego" -> switch (defenderType) {
+                case "planta" -> 1.5d;
+                case "agua" -> 0.5d;
+                default -> 1d;
+            };
+            case "planta" -> switch (defenderType) {
+                case "electrico", "rayo" -> 1.5d;
+                case "fuego" -> 0.5d;
+                default -> 1d;
+            };
+            case "electrico", "rayo" -> switch (defenderType) {
+                case "agua" -> 1.5d;
+                case "planta" -> 0.5d;
+                default -> 1d;
+            };
+            case "agua" -> switch (defenderType) {
+                case "fuego" -> 1.5d;
+                case "electrico", "rayo" -> 0.5d;
+                default -> 1d;
+            };
+            default -> 1d;
+        };
+    }
+
+    private String normalizeTypeName(String typeName) {
+        if (typeName == null || typeName.isBlank()) {
+            return null;
+        }
+
+        return typeName.trim().toLowerCase();
     }
 
 }

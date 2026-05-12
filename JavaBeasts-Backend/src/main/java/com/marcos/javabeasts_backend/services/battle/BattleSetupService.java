@@ -108,11 +108,14 @@ public class BattleSetupService {
 
     private BattleCreatureSnapshotResponse toCreatureSnapshot(JaBeasTeamed teamMember) {
         JaBeas jaBea = teamMember.getJaBeas();
+        Type type = jaBea.getType();
 
         return new BattleCreatureSnapshotResponse(
                 teamMember.getSlot(),
                 jaBea.getJaBeasId(),
                 jaBea.getName(),
+                type != null ? type.getTypeId() : null,
+                type != null ? type.getType() : null,
                 jaBea.getHealth(),
                 jaBea.getHealth(),
                 jaBea.getDamage(),
