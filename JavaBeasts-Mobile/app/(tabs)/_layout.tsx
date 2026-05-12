@@ -50,6 +50,14 @@ export default function TabLayout() {
         }}
       />
       <Tabs.Screen
+        name="history"
+        listeners={preventLeavingRoomWhenReady}
+        options={{
+          title: 'Historial',
+          tabBarIcon: ({ color, size }) => <Ionicons size={size} name="time-outline" color={color} />,
+        }}
+      />
+      <Tabs.Screen
         name="room"
         options={{
           title: 'Sala',
