@@ -43,6 +43,7 @@ public class JavaBeastsLobbyApp extends Application {
     private Label connectionLabel;
     private HBox playersRow;
     private Scene lobbyScene;
+    private BattleScreenFactory.BattleSceneView battleSceneView;
     private boolean matchReady;
     private boolean battleScreenShown;
     private String currentBattleRoomCode;
@@ -230,18 +231,24 @@ public class JavaBeastsLobbyApp extends Application {
         battleScreenShown = false;
         matchReady = false;
         currentBattleRoomCode = null;
+        battleSceneView = null;
         primaryStage.setScene(lobbyScene);
         primaryStage.setTitle("JavaBeasts");
         applyRoomStatus(roomStatus);
     }
 
     private void showBattleScreen(BattleSnapshotData snapshot) {
-        Scene battleScene = BattleScreenFactory.createBattleScene(snapshot);
-        primaryStage.setScene(battleScene);
+        if (battleSceneView == null) {
+            battleSceneView = BattleScreenFactory.createBattleSceneView(snapshot);
+            primaryStage.setScene(battleSceneView.getScene());
+        } else {
+            battleSceneView.update(snapshot);
+        }
         primaryStage.setTitle("JavaBeasts - Combate");
     }
 
     private void showFallbackBattleScreen(RoomStatusData roomStatus) {
+        battleSceneView = null;
         Scene battleScene = BattleScreenFactory.createBattleScene(roomStatus);
         primaryStage.setScene(battleScene);
         primaryStage.setTitle("JavaBeasts - Combate");

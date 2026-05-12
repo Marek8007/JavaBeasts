@@ -5,10 +5,12 @@ import com.marcos.javabeasts_javafx.battle.BattlePlayerSnapshotData;
 import com.marcos.javabeasts_javafx.battle.BattleSnapshotData;
 import com.marcos.javabeasts_javafx.socket.RoomStatusData;
 import com.marcos.javabeasts_javafx.socket.RoomStatusPlayer;
+import javafx.beans.property.SimpleDoubleProperty;
 import javafx.geometry.Insets;
 import javafx.geometry.Pos;
 import javafx.scene.Scene;
 import javafx.scene.control.Label;
+import javafx.scene.control.ProgressBar;
 import javafx.scene.image.Image;
 import javafx.scene.image.ImageView;
 import javafx.scene.layout.BorderPane;
@@ -83,40 +85,37 @@ public final class BattleScreenFactory {
     }
 
     public static Scene createBattleScene(BattleSnapshotData snapshot) {
+        return createBattleSceneView(snapshot).getScene();
+    }
+
+    public static BattleSceneView createBattleSceneView(BattleSnapshotData snapshot) {
         Label title = new Label("Combate");
         title.setFont(Font.font("System", FontWeight.BOLD, 34));
         title.setStyle("-fx-text-fill: #f8fafc;");
 
-        Label subtitle = new Label(snapshot.isFinished() ? "Combate finalizado" : "Combate en curso");
+        Label subtitle = new Label();
         subtitle.setFont(Font.font(18));
-        subtitle.setStyle("-fx-text-fill: " + (snapshot.isFinished() ? "#86efac" : "#cbd5e1") + ";");
-
-        Label roomCodeLabel = new Label("Sala " + safeRoomCode(snapshot));
+        Label roomCodeLabel = new Label();
         roomCodeLabel.setFont(Font.font("System", FontWeight.SEMI_BOLD, 18));
         roomCodeLabel.setStyle("-fx-text-fill: #93c5fd;");
 
         VBox header = new VBox(8, title, subtitle, roomCodeLabel);
         header.setAlignment(Pos.CENTER_LEFT);
 
-        VBox playerOnePanel = createBattlePlayerPanel("Jugador 1", snapshot.getPlayerOne());
-        VBox playerTwoPanel = createBattlePlayerPanel("Jugador 2", snapshot.getPlayerTwo());
+        BattlePlayerPanelView playerOnePanel = createBattlePlayerPanelView("Jugador 1");
+        BattlePlayerPanelView playerTwoPanel = createBattlePlayerPanelView("Jugador 2");
 
-        HBox battleRow = new HBox(24, playerOnePanel, playerTwoPanel);
+        HBox battleRow = new HBox(24, playerOnePanel.getRoot(), playerTwoPanel.getRoot());
         battleRow.setAlignment(Pos.CENTER);
 
-        Label turnLabel = new Label(snapshot.isFinished()
-                ? safeBattleResult(snapshot)
-                : "Turno " + safeTurnNumber(snapshot));
+        Label turnLabel = new Label();
         turnLabel.setFont(Font.font("System", FontWeight.BOLD, 22));
-        turnLabel.setStyle("-fx-text-fill: " + (snapshot.isFinished() ? "#86efac" : "#fcd34d") + ";");
 
-        Label statusLabel = new Label(safeBattleMessage(snapshot));
+        Label statusLabel = new Label();
         statusLabel.setFont(Font.font(17));
         statusLabel.setStyle("-fx-text-fill: #e2e8f0;");
 
-        Label footerHint = new Label(snapshot.isFinished()
-                ? "Partida terminada"
-                : "Esperando acciones de los jugadores");
+        Label footerHint = new Label();
         footerHint.setFont(Font.font(14));
         footerHint.setStyle("-fx-text-fill: #94a3b8;");
 
@@ -137,7 +136,18 @@ public final class BattleScreenFactory {
         root.setPadding(new Insets(32));
         root.setStyle("-fx-background-color: linear-gradient(to bottom right, #0f172a, #1e293b);");
 
-        return new Scene(root, 960, 540);
+        BattleSceneView sceneView = new BattleSceneView(
+                new Scene(root, 960, 540),
+                subtitle,
+                roomCodeLabel,
+                turnLabel,
+                statusLabel,
+                footerHint,
+                playerOnePanel,
+                playerTwoPanel
+        );
+        sceneView.update(snapshot);
+        return sceneView;
     }
 
     private static VBox createBattlePlayerPanel(String slotTitle, RoomStatusPlayer player) {
@@ -224,6 +234,58 @@ public final class BattleScreenFactory {
                 "-fx-border-color: rgba(148, 163, 184, 0.35);"
         );
         return panel;
+    }
+
+    private static BattlePlayerPanelView createBattlePlayerPanelView(String slotTitle) {
+        Label slotLabel = new Label(slotTitle);
+        slotLabel.setFont(Font.font("System", FontWeight.BOLD, 18));
+        slotLabel.setStyle("-fx-text-fill: #f8fafc;");
+
+        Label usernameLabel = new Label();
+        usernameLabel.setFont(Font.font("System", FontWeight.SEMI_BOLD, 24));
+        usernameLabel.setStyle("-fx-text-fill: #e2e8f0;");
+
+        Label teamLabel = new Label();
+        teamLabel.setFont(Font.font(16));
+        teamLabel.setStyle("-fx-text-fill: #cbd5e1;");
+
+        ImageView jaBeaImage = createJaBeaImage("placeholder", 96);
+
+        Label activeJaBeaLabel = new Label();
+        activeJaBeaLabel.setFont(Font.font(16));
+        activeJaBeaLabel.setStyle("-fx-text-fill: #cbd5e1;");
+
+        Region spacer = new Region();
+        VBox.setVgrow(spacer, Priority.ALWAYS);
+
+        HBox creatureRow = new HBox(18, jaBeaImage, new VBox(6, teamLabel, activeJaBeaLabel));
+        creatureRow.setAlignment(Pos.CENTER_LEFT);
+
+        Label hpLabel = new Label();
+        hpLabel.setFont(Font.font("System", FontWeight.BOLD, 16));
+        hpLabel.setStyle("-fx-text-fill: #e2e8f0;");
+
+        ProgressBar healthBar = new ProgressBar(1);
+        healthBar.setMaxWidth(Double.MAX_VALUE);
+        healthBar.setPrefHeight(18);
+        healthBar.setStyle("-fx-accent: #22c55e;");
+
+        VBox healthBox = new VBox(8, hpLabel, healthBar);
+        healthBox.setMaxWidth(Double.MAX_VALUE);
+
+        VBox panel = new VBox(12, slotLabel, usernameLabel, creatureRow, spacer, healthBox);
+        panel.setAlignment(Pos.TOP_LEFT);
+        panel.setPadding(new Insets(24));
+        panel.setPrefWidth(420);
+        panel.setMinHeight(220);
+        panel.setStyle(
+                "-fx-background-color: rgba(15, 23, 42, 0.88);" +
+                "-fx-background-radius: 18;" +
+                "-fx-border-radius: 18;" +
+                "-fx-border-color: rgba(148, 163, 184, 0.35);"
+        );
+
+        return new BattlePlayerPanelView(panel, usernameLabel, teamLabel, jaBeaImage, activeJaBeaLabel, hpLabel, healthBar);
     }
 
     private static String safeRoomCode(RoomStatusData roomStatus) {
@@ -338,5 +400,120 @@ public final class BattleScreenFactory {
         String withoutAccents = Normalizer.normalize(jaBeaName, Normalizer.Form.NFD)
                 .replaceAll("\\p{M}", "");
         return withoutAccents.trim().toLowerCase(Locale.ROOT);
+    }
+
+    public static final class BattleSceneView {
+        private final Scene scene;
+        private final Label subtitleLabel;
+        private final Label roomCodeLabel;
+        private final Label turnLabel;
+        private final Label statusLabel;
+        private final Label footerHintLabel;
+        private final BattlePlayerPanelView playerOnePanel;
+        private final BattlePlayerPanelView playerTwoPanel;
+
+        private BattleSceneView(
+                Scene scene,
+                Label subtitleLabel,
+                Label roomCodeLabel,
+                Label turnLabel,
+                Label statusLabel,
+                Label footerHintLabel,
+                BattlePlayerPanelView playerOnePanel,
+                BattlePlayerPanelView playerTwoPanel
+        ) {
+            this.scene = scene;
+            this.subtitleLabel = subtitleLabel;
+            this.roomCodeLabel = roomCodeLabel;
+            this.turnLabel = turnLabel;
+            this.statusLabel = statusLabel;
+            this.footerHintLabel = footerHintLabel;
+            this.playerOnePanel = playerOnePanel;
+            this.playerTwoPanel = playerTwoPanel;
+        }
+
+        public Scene getScene() {
+            return scene;
+        }
+
+        public void update(BattleSnapshotData snapshot) {
+            boolean finished = snapshot != null && snapshot.isFinished();
+
+            subtitleLabel.setText(finished ? "Combate finalizado" : "Combate en curso");
+            subtitleLabel.setStyle("-fx-text-fill: " + (finished ? "#86efac" : "#cbd5e1") + ";");
+            roomCodeLabel.setText("Sala " + safeRoomCode(snapshot));
+            turnLabel.setText(finished ? safeBattleResult(snapshot) : "Turno " + safeTurnNumber(snapshot));
+            turnLabel.setStyle("-fx-text-fill: " + (finished ? "#86efac" : "#fcd34d") + ";");
+            statusLabel.setText(safeBattleMessage(snapshot));
+            footerHintLabel.setText(finished ? "Partida terminada" : "Esperando acciones de los jugadores");
+
+            playerOnePanel.update(snapshot != null ? snapshot.getPlayerOne() : null);
+            playerTwoPanel.update(snapshot != null ? snapshot.getPlayerTwo() : null);
+        }
+    }
+
+    private static final class BattlePlayerPanelView {
+        private final VBox root;
+        private final Label usernameLabel;
+        private final Label teamLabel;
+        private final ImageView jaBeaImage;
+        private final Label activeJaBeaLabel;
+        private final Label hpLabel;
+        private final ProgressBar healthBar;
+        private final SimpleDoubleProperty healthRatioProperty = new SimpleDoubleProperty(1);
+
+        private BattlePlayerPanelView(
+                VBox root,
+                Label usernameLabel,
+                Label teamLabel,
+                ImageView jaBeaImage,
+                Label activeJaBeaLabel,
+                Label hpLabel,
+                ProgressBar healthBar
+        ) {
+            this.root = root;
+            this.usernameLabel = usernameLabel;
+            this.teamLabel = teamLabel;
+            this.jaBeaImage = jaBeaImage;
+            this.activeJaBeaLabel = activeJaBeaLabel;
+            this.hpLabel = hpLabel;
+            this.healthBar = healthBar;
+            this.healthBar.progressProperty().bind(healthRatioProperty);
+        }
+
+        public VBox getRoot() {
+            return root;
+        }
+
+        public void update(BattlePlayerSnapshotData player) {
+            String username = player != null && player.getUsername() != null && !player.getUsername().isBlank()
+                    ? player.getUsername()
+                    : "Jugador pendiente";
+            usernameLabel.setText(username);
+
+            String teamName = player != null && player.getTeamName() != null && !player.getTeamName().isBlank()
+                    ? player.getTeamName()
+                    : "Equipo pendiente";
+            teamLabel.setText("Equipo: " + teamName);
+
+            BattleCreatureSnapshotData activeJaBea = player != null ? player.getActiveJaBea() : null;
+            String activeJaBeaName = activeJaBea != null && activeJaBea.getName() != null && !activeJaBea.getName().isBlank()
+                    ? activeJaBea.getName()
+                    : "Pendiente";
+            activeJaBeaLabel.setText("JaBea activo: " + activeJaBeaName);
+            jaBeaImage.setImage(new Image(BattleScreenFactory.class.getResourceAsStream(resolveJaBeaImagePath(activeJaBeaName))));
+
+            int currentHealth = activeJaBea != null && activeJaBea.getCurrentHealth() != null
+                    ? activeJaBea.getCurrentHealth()
+                    : 0;
+            int maxHealth = activeJaBea != null && activeJaBea.getMaxHealth() != null && activeJaBea.getMaxHealth() > 0
+                    ? activeJaBea.getMaxHealth()
+                    : 1;
+            double healthRatio = Math.max(0, Math.min(1, (double) currentHealth / maxHealth));
+
+            hpLabel.setText("Vida: " + currentHealth + " / " + maxHealth);
+            healthRatioProperty.set(healthRatio);
+            healthBar.setStyle("-fx-accent: " + healthColor(healthRatio) + ";");
+        }
     }
 }
