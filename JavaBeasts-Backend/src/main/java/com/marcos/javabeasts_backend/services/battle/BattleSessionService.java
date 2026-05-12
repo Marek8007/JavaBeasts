@@ -138,23 +138,23 @@ public class BattleSessionService {
         BattlePlayerSnapshotResponse updatedPlayerTwo = playerTwo;
 
         if (playerOneAction.actionType() == BattleActionType.SWITCH) {
-            updatedPlayerOne = applyAttack(playerTwo, updatedPlayerOne, playerTwoAction, resolution);
+            updatedPlayerOne = applyAttack(session, playerTwo, updatedPlayerOne, playerTwoAction, resolution);
             updatedPlayerTwo = playerTwo;
         } else if (playerTwoAction.actionType() == BattleActionType.SWITCH) {
             updatedPlayerOne = playerOne;
-            updatedPlayerTwo = applyAttack(playerOne, updatedPlayerTwo, playerOneAction, resolution);
+            updatedPlayerTwo = applyAttack(session, playerOne, updatedPlayerTwo, playerOneAction, resolution);
         } else {
             boolean playerOneActsFirst = actsFirst(playerOneCreature, playerTwoCreature);
 
             if (playerOneActsFirst) {
-                updatedPlayerTwo = applyAttack(playerOne, updatedPlayerTwo, playerOneAction, resolution);
+                updatedPlayerTwo = applyAttack(session, playerOne, updatedPlayerTwo, playerOneAction, resolution);
                 if (updatedPlayerTwo.activeJaBea().currentHealth() > 0) {
-                    updatedPlayerOne = applyAttack(playerTwo, updatedPlayerOne, playerTwoAction, resolution);
+                    updatedPlayerOne = applyAttack(session, playerTwo, updatedPlayerOne, playerTwoAction, resolution);
                 }
             } else {
-                updatedPlayerOne = applyAttack(playerTwo, updatedPlayerOne, playerTwoAction, resolution);
+                updatedPlayerOne = applyAttack(session, playerTwo, updatedPlayerOne, playerTwoAction, resolution);
                 if (updatedPlayerOne.activeJaBea().currentHealth() > 0) {
-                    updatedPlayerTwo = applyAttack(playerOne, updatedPlayerTwo, playerOneAction, resolution);
+                    updatedPlayerTwo = applyAttack(session, playerOne, updatedPlayerTwo, playerOneAction, resolution);
                 }
             }
         }
@@ -302,6 +302,7 @@ public class BattleSessionService {
     }
 
     private BattlePlayerSnapshotResponse applyAttack(
+            BattleSession session,
             BattlePlayerSnapshotResponse attacker,
             BattlePlayerSnapshotResponse defender,
             BattleTurnAction action,
