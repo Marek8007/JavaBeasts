@@ -7,7 +7,7 @@ import {
   BattleMoveSnapshotResponse,
   BattleSnapshotResponse,
 } from '@/interfaces/battle.interface';
-import { MoveSummaryResponse, TeamSlotResponse } from '@/interfaces/team-composition.interface';
+import { MoveSummaryResponse } from '@/interfaces/team-composition.interface';
 import { useAuthStore } from '@/stores/authStore';
 import { useLobbyStore } from '@/stores/lobbyStore';
 import { Ionicons } from '@expo/vector-icons';
@@ -32,6 +32,8 @@ interface SwitchOption {
   slot: number;
   name: string;
   typeName?: string | null;
+  currentHealth: number;
+  maxHealth: number;
 }
 
 type IoniconName = ComponentProps<typeof Ionicons>['name'];
@@ -121,10 +123,10 @@ export default function BattleScreen() {
         ].filter((move): move is BattleMoveSnapshotResponse => Boolean(move)));
       }
 
-      setSwitchOptions(toSwitchOptions(composition.slots, player.activeJaBea.slot));
+      setSwitchOptions(toSwitchOptions(player.teamCreatures ?? [], player.activeJaBea.slot));
     } catch {
       setConfiguredMoves([]);
-      setSwitchOptions([]);
+      setSwitchOptions(toSwitchOptions(player.teamCreatures ?? [], player.activeJaBea.slot));
     }
   }
 
@@ -426,9 +428,11 @@ export default function BattleScreen() {
                 <Pressable
                   key={`switch-${option.slot}`}
                   className={`min-h-[72px] flex-row items-center justify-between rounded-lg border border-[#7c3aed] bg-white px-5 active:opacity-80 ${
-                    actionLoading || currentPlayerActionSubmitted || snapshot.finished ? 'opacity-45' : ''
+                    actionLoading || currentPlayerActionSubmitted || snapshot.finished || option.currentHealth <= 0
+                      ? 'opacity-45'
+                      : ''
                   }`}
-                  disabled={actionLoading || currentPlayerActionSubmitted || snapshot.finished}
+                  disabled={actionLoading || currentPlayerActionSubmitted || snapshot.finished || option.currentHealth <= 0}
                   onPress={() => void submitSwitch(option.slot)}>
                   <View>
                     <View className="flex-row items-center gap-3">
@@ -441,6 +445,10 @@ export default function BattleScreen() {
                         <Text className="text-lg font-extrabold text-[#7c3aed]">{option.name}</Text>
                         <Text className="mt-1 text-sm font-semibold text-beasts-muted">
                           Slot {option.slot}{option.typeName ? ` · ${option.typeName}` : ''}
+                        </Text>
+                        <Text className="mt-1 text-xs font-bold text-beasts-muted">
+                          Vida {option.currentHealth} / {option.maxHealth}
+                          {option.currentHealth <= 0 ? ' · Debilitado' : ''}
                         </Text>
                       </View>
                     </View>
@@ -468,13 +476,15 @@ export default function BattleScreen() {
   );
 }
 
-function toSwitchOptions(slots: TeamSlotResponse[], activeSlot?: number | null): SwitchOption[] {
+function toSwitchOptions(slots: BattleCreatureSnapshotResponse[], activeSlot?: number | null): SwitchOption[] {
   return slots
-    .filter((slot) => slot.slot !== activeSlot && Boolean(slot.member))
+    .filter((slot) => slot.slot !== activeSlot)
     .map((slot) => ({
       slot: slot.slot,
-      name: slot.member?.name ?? `Slot ${slot.slot}`,
-      typeName: slot.member?.typeName,
+      name: slot.name ?? `Slot ${slot.slot}`,
+      typeName: slot.moves?.[0]?.typeName ?? null,
+      currentHealth: slot.currentHealth ?? 0,
+      maxHealth: slot.maxHealth ?? 0,
     }));
 }
 

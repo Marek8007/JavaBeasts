@@ -13,6 +13,7 @@ import org.springframework.web.server.ResponseStatusException;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ThreadLocalRandom;
+import java.util.List;
 
 @Service
 public class BattleSessionService {
@@ -354,7 +355,8 @@ public class BattleSessionService {
                 defender.username(),
                 defender.teamId(),
                 defender.teamName(),
-                updatedCreature
+                updatedCreature,
+                buildTeamCreaturesSnapshot(session, defender.username(), defender.teamId(), updatedCreature)
         );
     }
 
@@ -382,7 +384,8 @@ public class BattleSessionService {
                 player.username(),
                 player.teamId(),
                 player.teamName(),
-                activeCreature
+                activeCreature,
+                buildTeamCreaturesSnapshot(session, player.username(), player.teamId(), activeCreature)
         );
     }
 
@@ -430,6 +433,26 @@ public class BattleSessionService {
                 creature.speed(),
                 creature.moves()
         );
+    }
+
+    private List<BattleCreatureSnapshotResponse> buildTeamCreaturesSnapshot(
+            BattleSession session,
+            String username,
+            Integer teamId,
+            BattleCreatureSnapshotResponse activeCreature
+    ) {
+        return battleSetupService.buildTeamCreatureSnapshots(teamId)
+                .stream()
+                .map(creature -> {
+                    if (activeCreature != null && activeCreature.slot() != null && activeCreature.slot().equals(creature.slot())) {
+                        return activeCreature;
+                    }
+
+                    int currentHealth = session.getStoredHealth(username, creature.slot())
+                            .orElse(creature.maxHealth() != null ? creature.maxHealth() : 0);
+                    return withCurrentHealth(creature, currentHealth);
+                })
+                .toList();
     }
 
     private BattleMoveSnapshotResponse findSelectedMove(BattleCreatureSnapshotResponse attacker, Integer moveSlot) {

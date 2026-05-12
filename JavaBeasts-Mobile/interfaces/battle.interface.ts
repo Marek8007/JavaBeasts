@@ -27,6 +27,7 @@ export interface BattlePlayerSnapshotResponse {
   teamId: number;
   teamName: string;
   activeJaBea: BattleCreatureSnapshotResponse;
+  teamCreatures?: BattleCreatureSnapshotResponse[];
 }
 
 export interface BattleSnapshotResponse {

@@ -91,14 +91,18 @@ public class BattleSetupService {
             throw new ResponseStatusException(HttpStatus.CONFLICT, "El equipo activo del jugador no tiene JaBeas asignados");
         }
 
-        JaBeasTeamed activeMember = teamMembers.getFirst();
+        List<BattleCreatureSnapshotResponse> teamCreatures = teamMembers.stream()
+                .map(this::toCreatureSnapshot)
+                .toList();
+        BattleCreatureSnapshotResponse activeCreature = teamCreatures.getFirst();
 
         return new BattlePlayerSnapshotResponse(
                 user.getUserId(),
                 user.getUsername(),
                 activeTeam.getTeamId(),
                 activeTeam.getName(),
-                toCreatureSnapshot(activeMember)
+                activeCreature,
+                teamCreatures
         );
     }
 
