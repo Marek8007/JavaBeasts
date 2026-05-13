@@ -11,6 +11,7 @@ import javafx.geometry.Insets;
 import javafx.geometry.Pos;
 import javafx.scene.Scene;
 import javafx.scene.control.Label;
+import javafx.scene.image.Image;
 import javafx.scene.layout.BorderPane;
 import javafx.scene.layout.HBox;
 import javafx.scene.layout.Priority;
@@ -52,6 +53,9 @@ public class JavaBeastsLobbyApp extends Application {
     @Override
     public void start(Stage stage) {
         primaryStage = stage;
+        stage.getIcons().add(new Image(
+                JavaBeastsLobbyApp.class.getResourceAsStream("/icons/javabeasts-icon.png")
+        ));
 
         Label title = new Label("JavaBeasts");
         title.setFont(Font.font("System", FontWeight.BOLD, 32));
