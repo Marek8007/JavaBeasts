@@ -95,8 +95,8 @@ public final class BattleScreenFactory {
         VBox header = new VBox(8, title, subtitle);
         header.setAlignment(Pos.CENTER);
 
-        BattlePlayerPanelView playerOnePanel = createBattlePlayerPanelView("Jugador 1");
-        BattlePlayerPanelView playerTwoPanel = createBattlePlayerPanelView("Jugador 2");
+        BattlePlayerPanelView playerOnePanel = createBattlePlayerPanelView("Jugador 1", true);
+        BattlePlayerPanelView playerTwoPanel = createBattlePlayerPanelView("Jugador 2", false);
 
         HBox battleRow = new HBox(24, playerOnePanel.getRoot(), playerTwoPanel.getRoot());
         battleRow.setAlignment(Pos.CENTER);
@@ -228,7 +228,7 @@ public final class BattleScreenFactory {
         return panel;
     }
 
-    private static BattlePlayerPanelView createBattlePlayerPanelView(String slotTitle) {
+    private static BattlePlayerPanelView createBattlePlayerPanelView(String slotTitle, boolean imageOnRight) {
         Label slotLabel = new Label(slotTitle);
         slotLabel.setFont(Font.font("System", FontWeight.BOLD, 18));
         slotLabel.setStyle("-fx-text-fill: #7c2d12;");
@@ -250,8 +250,11 @@ public final class BattleScreenFactory {
         Region spacer = new Region();
         VBox.setVgrow(spacer, Priority.ALWAYS);
 
-        HBox creatureRow = new HBox(18, jaBeaImage, new VBox(8, activeJaBeaLabel, aliveCountLabel));
-        creatureRow.setAlignment(Pos.CENTER_LEFT);
+        VBox creatureInfo = new VBox(8, activeJaBeaLabel, aliveCountLabel);
+        HBox creatureRow = imageOnRight
+                ? new HBox(18, creatureInfo, jaBeaImage)
+                : new HBox(18, jaBeaImage, creatureInfo);
+        creatureRow.setAlignment(imageOnRight ? Pos.CENTER_RIGHT : Pos.CENTER_LEFT);
 
         Label hpLabel = new Label();
         hpLabel.setFont(Font.font("System", FontWeight.BOLD, 16));

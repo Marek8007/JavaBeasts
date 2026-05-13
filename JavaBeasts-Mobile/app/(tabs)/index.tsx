@@ -66,15 +66,15 @@ export default function HomeScreen() {
           <Text className="text-base text-beasts-muted">Mando movil conectado al backend.</Text>
         </View>
 
-        <View className="items-center gap-3 rounded-lg bg-white p-[22px] shadow-lg shadow-beasts-ink/10">
-          <View className="rounded-lg bg-[#e8edf5] p-2.5">
-            <Ionicons name="person-circle-outline" size={42} color="#1e4f8f" />
+        <View className="items-center gap-3 rounded-lg bg-beasts-panel p-[22px] shadow-lg shadow-beasts-ink/10">
+          <View className="rounded-lg bg-[#1e3a8a] p-2.5">
+            <Ionicons name="person-circle-outline" size={42} color="#1d4ed8" />
           </View>
           <Text className="text-[26px] font-extrabold text-beasts-ink">{user?.username ?? 'Jugador'}</Text>
           <Text className="text-[15px] text-beasts-muted">
             Victorias {user?.matchesWon ?? 0} - Derrotas {user?.matchesLost ?? 0}
           </Text>
-          <Text className="text-center text-sm leading-5 text-[#42506a]">
+          <Text className="text-center text-sm leading-5 text-[#cbd5e1]">
             Sesion lista para gestionar equipos y entrar al lobby.
           </Text>
 

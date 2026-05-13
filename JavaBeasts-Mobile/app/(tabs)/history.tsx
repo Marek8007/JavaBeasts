@@ -4,7 +4,8 @@ import { MatchHistoryResponse } from '@/interfaces/history.interface';
 import { useAuthStore } from '@/stores/authStore';
 import { useFocusEffect } from '@react-navigation/native';
 import { useCallback, useState } from 'react';
-import { ActivityIndicator, Image, RefreshControl, SafeAreaView, ScrollView, Text, View } from 'react-native';
+import { ActivityIndicator, Image, RefreshControl, ScrollView, Text, View } from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
 
 export default function HistoryScreen() {
   const user = useAuthStore((state) => state.user);
@@ -48,10 +49,10 @@ export default function HistoryScreen() {
   );
 
   return (
-    <SafeAreaView className="flex-1 bg-beasts-soft">
+    <SafeAreaView className="flex-1 bg-beasts-soft" edges={['top']}>
       <ScrollView
         className="flex-1"
-        contentContainerClassName="px-5 pb-8 pt-6"
+        contentContainerClassName="px-5 pb-8 pt-9"
         refreshControl={<RefreshControl refreshing={refreshing} onRefresh={() => void loadHistory(true)} />}>
         <View className="mb-5 gap-1">
           <Text className="text-3xl font-extrabold text-beasts-ink">Historial</Text>
@@ -61,21 +62,21 @@ export default function HistoryScreen() {
         </View>
 
         {loading ? (
-          <View className="min-h-[320px] items-center justify-center rounded-lg bg-white">
-            <ActivityIndicator color="#1e4f8f" />
+          <View className="min-h-[320px] items-center justify-center rounded-lg bg-beasts-panel">
+            <ActivityIndicator color="#1d4ed8" />
             <Text className="mt-3 text-sm font-semibold text-beasts-muted">Cargando historial...</Text>
           </View>
         ) : error ? (
-          <View className="rounded-lg border border-[#f7d6bf] bg-[#fff4ed] px-4 py-4">
+          <View className="rounded-lg border border-[#9a3412] bg-[#431407] px-4 py-4">
             <Text className="text-sm font-semibold leading-5 text-beasts-warning">{error}</Text>
           </View>
         ) : history.length ? (
           <View className="gap-4">
             {history.map((match) => (
-              <View key={match.matchId} className="rounded-lg bg-white p-4 shadow-lg shadow-beasts-ink/10">
+              <View key={match.matchId} className="rounded-lg bg-beasts-panel p-4 shadow-lg shadow-beasts-ink/10">
                 <View className="flex-row items-center justify-between gap-3">
                   <View>
-                    <Text className={`text-xs font-extrabold uppercase ${match.won ? 'text-[#15803d]' : 'text-[#bb3e03]'}`}>
+                    <Text className={`text-xs font-extrabold uppercase ${match.won ? 'text-[#15803d]' : 'text-[#c2410c]'}`}>
                       {match.won ? 'Victoria' : 'Derrota'}
                     </Text>
                     <Text className="mt-1 text-lg font-extrabold text-beasts-ink">
@@ -90,7 +91,7 @@ export default function HistoryScreen() {
 
                 <View className="mt-4 gap-3">
                   {match.team.map((jabea) => (
-                    <View key={`${match.matchId}-${jabea.slot}`} className="flex-row items-center gap-3 rounded-lg bg-[#f8fafc] px-3 py-3">
+                    <View key={`${match.matchId}-${jabea.slot}`} className="flex-row items-center gap-3 rounded-lg bg-[#111827] px-3 py-3">
                       <Image className="h-12 w-12" resizeMode="contain" source={getJaBeaImage(jabea.name)} />
                       <View className="flex-1">
                         <Text className="text-sm font-extrabold text-beasts-ink">
@@ -107,7 +108,7 @@ export default function HistoryScreen() {
             ))}
           </View>
         ) : (
-          <View className="rounded-lg bg-white px-4 py-5">
+          <View className="rounded-lg bg-beasts-panel px-4 py-5">
             <Text className="text-sm font-semibold leading-5 text-beasts-muted">
               Todavia no hay partidas registradas para este usuario.
             </Text>

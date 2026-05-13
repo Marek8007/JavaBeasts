@@ -172,7 +172,7 @@ export default function TeamsScreen() {
 
   return (
     <SafeAreaView className="flex-1 bg-beasts-soft" edges={['top']}>
-      <View className="flex-1 px-[18px] pt-6">
+      <View className="flex-1 px-[18px] pt-9">
         <View className="mb-[18px] flex-row items-center justify-between">
           <View>
             <Text className="text-3xl font-extrabold text-beasts-ink">Equipos</Text>
@@ -183,21 +183,21 @@ export default function TeamsScreen() {
 
           <View className="flex-row gap-2.5">
             <Pressable
-              className="h-[42px] w-[42px] items-center justify-center rounded-lg bg-white active:opacity-80"
+              className="h-[42px] w-[42px] items-center justify-center rounded-lg bg-beasts-panel active:opacity-80"
               onPress={openCreateModal}>
-              <Ionicons name="add" size={22} color="#1e4f8f" />
+              <Ionicons name="add" size={22} color="#1d4ed8" />
             </Pressable>
             <Pressable
-              className="h-[42px] w-[42px] items-center justify-center rounded-lg bg-white active:opacity-80"
+              className="h-[42px] w-[42px] items-center justify-center rounded-lg bg-beasts-panel active:opacity-80"
               onPress={refreshTeams}>
-              <Ionicons name="refresh" size={20} color="#1e4f8f" />
+              <Ionicons name="refresh" size={20} color="#1d4ed8" />
             </Pressable>
           </View>
         </View>
 
         {loading ? (
           <View className="flex-1 items-center justify-center px-6">
-            <ActivityIndicator color="#1e4f8f" />
+            <ActivityIndicator color="#1d4ed8" />
             <Text className="mt-2 text-center text-sm leading-5 text-beasts-muted">
               Cargando equipos...
             </Text>
@@ -217,12 +217,12 @@ export default function TeamsScreen() {
           </View>
         ) : (
           <FlatList
-            className="rounded-lg bg-white"
+            className="rounded-lg bg-beasts-panel"
             contentContainerClassName={teams.length === 0 ? 'grow justify-center' : 'py-1'}
             data={teams}
             keyExtractor={(team) => String(team.teamId)}
             refreshControl={
-              <RefreshControl refreshing={refreshing} tintColor="#1e4f8f" onRefresh={refreshTeams} />
+              <RefreshControl refreshing={refreshing} tintColor="#1d4ed8" onRefresh={refreshTeams} />
             }
             renderItem={({ item }) => (
               <TeamListRow
@@ -245,7 +245,7 @@ export default function TeamsScreen() {
             )}
             ListEmptyComponent={
               <View className="flex-1 items-center justify-center px-6">
-                <Ionicons name="albums-outline" size={30} color="#68758a" />
+                <Ionicons name="albums-outline" size={30} color="#94a3b8" />
                 <Text className="mt-2.5 text-center text-[17px] font-extrabold text-beasts-ink">
                   Todavia no tienes equipos
                 </Text>
@@ -259,7 +259,7 @@ export default function TeamsScreen() {
 
         <Modal animationType="fade" transparent visible={modalVisible} onRequestClose={closeModal}>
           <View className="flex-1 items-center justify-center bg-[rgba(23,32,51,0.45)] px-5">
-            <View className="max-h-[88%] w-full gap-4 rounded-lg bg-white p-[18px]">
+            <View className="max-h-[88%] w-full gap-4 rounded-lg bg-beasts-panel p-[18px]">
               <View className="flex-row items-center justify-between gap-4">
                 <View className="flex-1">
                   <Text className="text-xl font-extrabold text-beasts-ink">
@@ -274,25 +274,25 @@ export default function TeamsScreen() {
               <TextInput
                 autoCapitalize="sentences"
                 autoFocus
-                className="min-h-12 rounded-lg border border-beasts-line bg-[#f8fafc] px-3.5 text-base text-beasts-ink"
+                className="min-h-12 rounded-lg border border-beasts-line bg-[#111827] px-3.5 text-base text-beasts-ink"
                 maxLength={50}
                 onChangeText={(value) => {
                   setTeamName(value);
                   setModalError('');
                 }}
                 placeholder="Nombre del equipo"
-                placeholderTextColor="#8a93a3"
+                placeholderTextColor="#94a3b8"
                 value={teamName}
               />
 
               {modalError ? (
-                <View className="rounded-lg border border-[#f7d6bf] bg-[#fff4ed] px-3.5 py-3">
+                <View className="rounded-lg border border-[#9a3412] bg-[#431407] px-3.5 py-3">
                   <Text className="text-sm font-semibold leading-5 text-beasts-warning">{modalError}</Text>
                 </View>
               ) : null}
 
               <FlatList
-                className="max-h-[260px] rounded-lg border border-beasts-line bg-[#f8fafc]"
+                className="max-h-[260px] rounded-lg border border-beasts-line bg-[#111827]"
                 columnWrapperClassName="gap-2"
                 contentContainerClassName="gap-2 p-2"
                 data={TEAM_ICON_NAMES}
@@ -306,10 +306,10 @@ export default function TeamsScreen() {
                   return (
                     <Pressable
                       className={`h-11 flex-1 items-center justify-center rounded-lg active:opacity-80 ${
-                        selected ? 'bg-beasts-blue' : 'bg-white'
+                        selected ? 'bg-beasts-blue' : 'bg-beasts-panel'
                       }`}
                       onPress={() => setSelectedIconName(item)}>
-                      <Ionicons name={item} size={22} color={selected ? '#ffffff' : '#1e4f8f'} />
+                      <Ionicons name={item} size={22} color={selected ? '#ffffff' : '#1d4ed8'} />
                     </Pressable>
                   );
                 }}
@@ -320,7 +320,7 @@ export default function TeamsScreen() {
                   className="min-h-11 items-center justify-center rounded-lg border border-beasts-line px-4 active:opacity-80"
                   disabled={savingTeam}
                   onPress={closeModal}>
-                  <Text className="text-sm font-extrabold text-[#42506a]">Cancelar</Text>
+                  <Text className="text-sm font-extrabold text-[#cbd5e1]">Cancelar</Text>
                 </Pressable>
                 <Pressable
                   className={`min-h-11 min-w-[102px] items-center justify-center rounded-lg bg-beasts-blue px-4 active:opacity-80 ${
