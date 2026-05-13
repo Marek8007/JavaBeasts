@@ -199,7 +199,9 @@ export default function BattleScreen() {
       const response = await submitBattleActionAction(roomStatus.roomCode, user.username, 'ATTACK', moveSlot);
       setActionState(response);
       setSnapshot(response.snapshot);
-      setMessage(response.message);
+      if (response.turnResolved || response.snapshot.finished) {
+        setMessage(response.message);
+      }
       void loadPlayerTeamOptions(response.snapshot);
     } catch (requestError: any) {
       setError(requestError?.message ? String(requestError.message) : 'No se pudo enviar la accion.');
@@ -220,7 +222,9 @@ export default function BattleScreen() {
       const response = await submitBattleActionAction(roomStatus.roomCode, user.username, 'SWITCH', undefined, switchSlot);
       setActionState(response);
       setSnapshot(response.snapshot);
-      setMessage(response.message);
+      if (response.turnResolved || response.snapshot.finished) {
+        setMessage(response.message);
+      }
       void loadPlayerTeamOptions(response.snapshot);
     } catch (requestError: any) {
       setError(requestError?.message ? String(requestError.message) : 'No se pudo cambiar de JaBea.');
@@ -256,7 +260,9 @@ export default function BattleScreen() {
       const response = await submitBattleActionAction(roomStatus.roomCode, user.username, 'SURRENDER');
       setActionState(response);
       setSnapshot(response.snapshot);
-      setMessage(response.message);
+      if (response.turnResolved || response.snapshot.finished) {
+        setMessage(response.message);
+      }
     } catch (requestError: any) {
       setError(requestError?.message ? String(requestError.message) : 'No se pudo rendir la partida.');
     } finally {
@@ -341,11 +347,7 @@ export default function BattleScreen() {
               <Text className="mt-3 text-sm font-semibold leading-5 text-beasts-muted">
                 {message
                   ? message
-                  : currentPlayerActionSubmitted
-                    ? actionState?.turnReadyToResolve
-                      ? 'Ambos jugadores han enviado accion.'
-                      : 'Accion enviada. Esperando al rival.'
-                    : 'Elige una accion para este turno.'}
+                  : 'Elige una accion para este turno.'}
               </Text>
             </View>
 
