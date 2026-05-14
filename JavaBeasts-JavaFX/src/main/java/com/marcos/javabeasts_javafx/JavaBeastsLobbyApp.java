@@ -356,14 +356,24 @@ public class JavaBeastsLobbyApp extends Application {
     }
 
     private static String resolveLobbyHost() {
-        return System.getProperty("javabeasts.lobby.host", DEFAULT_LOBBY_HOST);
+        String configuredHost = System.getProperty("javabeasts.lobby.host");
+        if (configuredHost == null || configuredHost.isBlank()) {
+            configuredHost = System.getenv("JAVABEASTS_LOBBY_HOST");
+        }
+
+        return configuredHost == null || configuredHost.isBlank() ? DEFAULT_LOBBY_HOST : configuredHost;
     }
 
     private static int resolveLobbyPort() {
-        String configuredPort = System.getProperty("javabeasts.lobby.port", String.valueOf(DEFAULT_LOBBY_PORT));
+        String configuredPort = System.getProperty("javabeasts.lobby.port");
+        if (configuredPort == null || configuredPort.isBlank()) {
+            configuredPort = System.getenv("JAVABEASTS_LOBBY_PORT");
+        }
 
         try {
-            return Integer.parseInt(configuredPort);
+            return configuredPort == null || configuredPort.isBlank()
+                    ? DEFAULT_LOBBY_PORT
+                    : Integer.parseInt(configuredPort);
         } catch (NumberFormatException e) {
             return DEFAULT_LOBBY_PORT;
         }
