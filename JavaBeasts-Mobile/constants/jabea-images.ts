@@ -18,6 +18,7 @@ const JABEA_IMAGES: Record<string, ImageSourcePropType> = {
   swiftor: require('../assets/jabeas/swiftor.png'),
   sylphyra: require('../assets/jabeas/sylphyra.png'),
   tiderra: require('../assets/jabeas/tiderra.png'),
+  verdrax: require('../assets/jabeas/verdrax.png'),
   voltari: require('../assets/jabeas/voltari.png'),
   zapphir: require('../assets/jabeas/zapphir.png'),
 };
