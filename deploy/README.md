@@ -51,6 +51,12 @@ Arrancar backend y JavaFX conectando a TiDB Cloud:
 
 En este modo no se levanta MySQL local. El backend conecta con la BBDD indicada por `DB_HOST`, `DB_PORT`, `DB_NAME`, `DB_USERNAME`, `DB_PASSWORD` y `DB_URL_OPTIONS`.
 
+Importante: en los archivos `.env`, `DB_URL_OPTIONS` debe escribirse sin comillas:
+
+```env
+DB_URL_OPTIONS=?sslMode=VERIFY_IDENTITY&enabledTLSProtocols=TLSv1.2,TLSv1.3
+```
+
 ## Comprobaciones rápidas
 
 ```bash

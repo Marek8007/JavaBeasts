@@ -17,8 +17,9 @@ COPY pom.xml ./
 RUN mvn -q -DskipTests dependency:go-offline
 
 COPY src src
+RUN mvn -q -DskipTests package dependency:copy-dependencies
 
 ENV JAVABEASTS_LOBBY_HOST=backend
 ENV JAVABEASTS_LOBBY_PORT=7878
 
-CMD ["mvn", "-q", "javafx:run"]
+CMD ["java", "--module-path", "target/dependency", "--add-modules", "javafx.controls", "-cp", "target/classes:target/dependency/*", "com.marcos.javabeasts_javafx.JavaBeastsLobbyApp"]

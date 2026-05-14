@@ -11,6 +11,20 @@ if [ ! -f "$ENV_FILE" ]; then
   exit 1
 fi
 
+DB_URL_OPTIONS_VALUE="$(grep -E '^DB_URL_OPTIONS=' "$ENV_FILE" | cut -d= -f2- || true)"
+if [[ "$DB_URL_OPTIONS_VALUE" == *\"* || "$DB_URL_OPTIONS_VALUE" == *\'* ]]; then
+  echo "DB_URL_OPTIONS no debe llevar comillas en $ENV_FILE"
+  echo "Correcto: DB_URL_OPTIONS=?sslMode=DISABLED"
+  echo "Incorrecto: DB_URL_OPTIONS='?sslMode=DISABLED'"
+  exit 1
+fi
+
+if [[ "$DB_URL_OPTIONS_VALUE" == *"?sslMode="*"?sslMode="* ]]; then
+  echo "DB_URL_OPTIONS tiene sslMode duplicado en $ENV_FILE"
+  echo "Correcto: DB_URL_OPTIONS=?sslMode=DISABLED"
+  exit 1
+fi
+
 if command -v xhost >/dev/null 2>&1 && [ -n "${DISPLAY:-}" ]; then
   xhost +local:docker >/dev/null || true
 fi
