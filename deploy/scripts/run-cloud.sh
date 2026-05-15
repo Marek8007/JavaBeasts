@@ -25,13 +25,23 @@ if [[ "$DB_URL_OPTIONS_VALUE" == *"?sslMode="*"?sslMode="* ]]; then
   exit 1
 fi
 
-if command -v xhost >/dev/null 2>&1 && [ -n "${DISPLAY:-}" ]; then
-  xhost +local: >/dev/null || true
-  xhost +SI:localuser:root >/dev/null || true
+if [ -z "${JAVA_HOME:-}" ]; then
+  for candidate in /usr/lib/jvm/java-21-openjdk-* /usr/lib/jvm/jdk-21* /usr/lib/jvm/temurin-21*; do
+    if [ -x "$candidate/bin/javac" ]; then
+      export JAVA_HOME="$candidate"
+      export PATH="$JAVA_HOME/bin:$PATH"
+      break
+    fi
+  done
 fi
 
-export HOST_UID="$(id -u)"
-export HOST_GID="$(id -g)"
+JAVA_VERSION_OUTPUT="$(javac -version 2>&1 || true)"
+if [[ "$JAVA_VERSION_OUTPUT" != javac\ 21* ]]; then
+  echo "JavaFX se ejecuta fuera de Docker y necesita JDK 21."
+  echo "Version actual: ${JAVA_VERSION_OUTPUT:-javac no encontrado}"
+  echo "Instala JDK 21 o exporta JAVA_HOME apuntando a un JDK 21 antes de lanzar el script."
+  exit 1
+fi
 
 cd "$ROOT_DIR"
 
@@ -48,4 +58,26 @@ fi
 
 "${COMPOSE_COMMAND[@]}" \
   --env-file "$ENV_FILE" \
-  up --build backend javafx
+  up --build -d backend
+
+BACKEND_SOCKET_PORT_VALUE="$(grep -E '^BACKEND_SOCKET_PORT=' "$ENV_FILE" | cut -d= -f2- || true)"
+JAVABEASTS_LOBBY_PORT="${BACKEND_SOCKET_PORT_VALUE:-7878}"
+export JAVABEASTS_LOBBY_HOST="127.0.0.1"
+export JAVABEASTS_LOBBY_PORT
+
+echo "Esperando al lobby TCP en ${JAVABEASTS_LOBBY_HOST}:${JAVABEASTS_LOBBY_PORT}..."
+for _ in {1..30}; do
+  if timeout 1 bash -c "cat < /dev/null > /dev/tcp/${JAVABEASTS_LOBBY_HOST}/${JAVABEASTS_LOBBY_PORT}" >/dev/null 2>&1; then
+    break
+  fi
+  sleep 1
+done
+
+if command -v mvn >/dev/null 2>&1; then
+  MAVEN_COMMAND=(mvn)
+else
+  MAVEN_COMMAND=("$ROOT_DIR/JavaBeasts-Backend/mvnw")
+fi
+
+echo "Backend arrancado en Docker. Lanzando JavaFX local..."
+"${MAVEN_COMMAND[@]}" -f "$ROOT_DIR/JavaBeasts-JavaFX/pom.xml" javafx:run
