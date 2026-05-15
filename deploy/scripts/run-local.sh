@@ -30,6 +30,9 @@ if command -v xhost >/dev/null 2>&1 && [ -n "${DISPLAY:-}" ]; then
   xhost +SI:localuser:root >/dev/null || true
 fi
 
+export HOST_UID="$(id -u)"
+export HOST_GID="$(id -g)"
+
 cd "$ROOT_DIR"
 
 if docker compose version >/dev/null 2>&1; then

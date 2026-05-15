@@ -42,8 +42,10 @@ services:
     container_name: javabeasts-javafx
     depends_on:
       - backend
+    user: "${HOST_UID:-1000}:${HOST_GID:-1000}"
     environment:
       DISPLAY: ${DISPLAY}
+      HOME: /tmp
       JAVABEASTS_LOBBY_HOST: ${JAVABEASTS_LOBBY_HOST:-backend}
       JAVABEASTS_LOBBY_PORT: ${JAVABEASTS_LOBBY_PORT:-7878}
     volumes:
