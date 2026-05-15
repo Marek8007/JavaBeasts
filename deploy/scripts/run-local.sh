@@ -59,7 +59,7 @@ fi
 "${COMPOSE_COMMAND[@]}" \
   --env-file "$ENV_FILE" \
   --profile local \
-  up --build -d mysql backend
+  up --build -d --remove-orphans mysql backend
 
 BACKEND_SOCKET_PORT_VALUE="$(grep -E '^BACKEND_SOCKET_PORT=' "$ENV_FILE" | cut -d= -f2- || true)"
 JAVABEASTS_LOBBY_PORT="${BACKEND_SOCKET_PORT_VALUE:-7878}"
@@ -81,4 +81,4 @@ else
 fi
 
 echo "Backend y MySQL arrancados en Docker. Lanzando JavaFX local..."
-"${MAVEN_COMMAND[@]}" -f "$ROOT_DIR/JavaBeasts-JavaFX/pom.xml" javafx:run
+"${MAVEN_COMMAND[@]}" -f "$ROOT_DIR/JavaBeasts-JavaFX/pom.xml" clean javafx:run
