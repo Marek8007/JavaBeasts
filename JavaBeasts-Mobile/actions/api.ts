@@ -7,4 +7,16 @@ export const javabeastsApi = axios.create({
   headers: {
     'Content-Type': 'application/json',
   },
+  timeout: 5000,
 });
+
+javabeastsApi.interceptors.response.use(
+  (response) => response,
+  (error) => {
+    if (error?.message === 'Network Error' || error?.code === 'ECONNABORTED') {
+      error.message = `${error.message} (${API_BASE_URL})`;
+    }
+
+    return Promise.reject(error);
+  }
+);
