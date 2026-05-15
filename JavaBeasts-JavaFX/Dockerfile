@@ -1,4 +1,14 @@
-FROM maven:3.9.9-eclipse-temurin-21
+FROM maven:3.9.9-eclipse-temurin-21 AS build
+
+WORKDIR /app
+
+COPY pom.xml ./
+RUN mvn -q -DskipTests dependency:go-offline
+
+COPY src src
+RUN mvn -q -DskipTests package dependency:copy-dependencies
+
+FROM eclipse-temurin:21-jre
 
 RUN apt-get update \
     && apt-get install -y --no-install-recommends \
@@ -13,11 +23,8 @@ RUN apt-get update \
 
 WORKDIR /app
 
-COPY pom.xml ./
-RUN mvn -q -DskipTests dependency:go-offline
-
-COPY src src
-RUN mvn -q -DskipTests package dependency:copy-dependencies
+COPY --from=build /app/target/classes target/classes
+COPY --from=build /app/target/dependency target/dependency
 
 ENV JAVABEASTS_LOBBY_HOST=backend
 ENV JAVABEASTS_LOBBY_PORT=7878
