@@ -27,6 +27,7 @@ fi
 
 if command -v xhost >/dev/null 2>&1 && [ -n "${DISPLAY:-}" ]; then
   xhost +local:docker >/dev/null || true
+  xhost +SI:localuser:root >/dev/null || true
 fi
 
 cd "$ROOT_DIR"
