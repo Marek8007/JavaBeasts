@@ -17,11 +17,11 @@ import {
   KeyboardAvoidingView,
   Platform,
   Pressable,
-  SafeAreaView,
   Text,
   TextInput,
   View,
 } from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
 
 const ROOM_CODE_LENGTH = 6;
 const ROOM_STATUS_REFRESH_MS = 2500;
@@ -198,12 +198,12 @@ export default function RoomJoinScreen() {
   }
 
   return (
-    <SafeAreaView className="flex-1 bg-beasts-soft">
+    <SafeAreaView className="flex-1 bg-beasts-soft" edges={['top']}>
       <KeyboardAvoidingView
         behavior={Platform.OS === 'ios' ? 'padding' : undefined}
         className="flex-1"
         keyboardVerticalOffset={24}>
-        <View className="flex-1 px-[18px] pt-6">
+        <View className="flex-1 px-[18px] pt-9">
           <View className="mb-[18px]">
             <Text className="text-3xl font-extrabold text-beasts-ink">Sala</Text>
             <Text className="mt-1 max-w-[300px] text-sm leading-5 text-beasts-muted">
@@ -213,7 +213,7 @@ export default function RoomJoinScreen() {
             </Text>
           </View>
 
-          <View className="rounded-lg bg-white p-[18px] shadow-lg shadow-beasts-ink/10">
+          <View className="rounded-lg bg-beasts-panel p-[18px] shadow-lg shadow-beasts-ink/10">
             <View className="mb-5 flex-row items-center gap-3">
               <View className="h-12 w-12 items-center justify-center rounded-lg bg-beasts-blue">
                 <Ionicons name="ticket-outline" size={24} color="#ffffff" />
@@ -226,7 +226,7 @@ export default function RoomJoinScreen() {
 
             <TextInput
               className={`min-h-[62px] rounded-lg border px-4 text-center text-2xl font-extrabold tracking-[8px] text-beasts-ink ${
-                joined ? 'border-[#cde7d8] bg-[#f0fdf4]' : 'border-beasts-line bg-[#f8fafc]'
+                joined ? 'border-[#166534] bg-[#052e16]' : 'border-beasts-line bg-[#111827]'
               }`}
               editable={!joined}
               inputMode="numeric"
@@ -234,27 +234,27 @@ export default function RoomJoinScreen() {
               maxLength={ROOM_CODE_LENGTH}
               onChangeText={updateRoomCode}
               placeholder="000000"
-              placeholderTextColor="#a8b0bf"
+              placeholderTextColor="#94a3b8"
               returnKeyType="done"
               textContentType="oneTimeCode"
               value={roomCode}
             />
 
             {error ? (
-              <View className="mt-3 rounded-lg border border-[#f7d6bf] bg-[#fff4ed] px-3.5 py-3">
+              <View className="mt-3 rounded-lg border border-[#9a3412] bg-[#431407] px-3.5 py-3">
                 <Text className="text-sm font-semibold leading-5 text-beasts-warning">{error}</Text>
               </View>
             ) : null}
 
-            <View className="mt-3 rounded-lg border border-beasts-line bg-[#f8fafc] px-3.5 py-3">
+            <View className="mt-3 rounded-lg border border-beasts-line bg-[#111827] px-3.5 py-3">
               <View className="flex-row items-center justify-between gap-3">
                 <View className="flex-row flex-1 items-center gap-2">
-                  <Ionicons name="albums-outline" size={19} color="#1e4f8f" />
+                  <Ionicons name="albums-outline" size={19} color="#1d4ed8" />
                   <Text className="text-sm font-extrabold text-beasts-ink">Equipo activo</Text>
                 </View>
-                {teamsLoading ? <ActivityIndicator color="#1e4f8f" /> : null}
+                {teamsLoading ? <ActivityIndicator color="#1d4ed8" /> : null}
               </View>
-              <Text className={`mt-2 text-sm leading-5 ${activeTeam ? 'text-[#42506a]' : 'text-beasts-warning'}`}>
+              <Text className={`mt-2 text-sm leading-5 ${activeTeam ? 'text-[#cbd5e1]' : 'text-beasts-warning'}`}>
                 {activeTeam
                   ? activeTeam.name
                   : 'No tienes ningun equipo activo seleccionado.'}
@@ -262,7 +262,7 @@ export default function RoomJoinScreen() {
             </View>
 
             {roomStatus ? (
-              <View className="mt-3 gap-3 rounded-lg border border-[#cde7d8] bg-[#f0fdf4] px-3.5 py-3">
+              <View className="mt-3 gap-3 rounded-lg border border-[#166534] bg-[#052e16] px-3.5 py-3">
                 <View className="flex-row items-center gap-2">
                   <Ionicons name="checkmark-circle-outline" size={20} color="#15803d" />
                   <Text className="flex-1 text-sm font-semibold leading-5 text-[#15803d]">
@@ -271,12 +271,12 @@ export default function RoomJoinScreen() {
                 </View>
                 <View
                   className={`flex-row items-center gap-2 rounded-lg px-3 py-2 ${
-                    roomStatus.canStart ? 'bg-[#dcfce7]' : 'bg-white'
+                    roomStatus.canStart ? 'bg-[#14532d]' : 'bg-beasts-panel'
                   }`}>
                   <Ionicons
                     name={roomStatus.canStart ? 'flash-outline' : 'hourglass-outline'}
                     size={18}
-                    color={roomStatus.canStart ? '#15803d' : '#68758a'}
+                    color={roomStatus.canStart ? '#15803d' : '#94a3b8'}
                   />
                   <Text
                     className={`flex-1 text-sm font-semibold leading-5 ${
@@ -300,7 +300,7 @@ export default function RoomJoinScreen() {
                   />
                 </View>
                 {isCombatReady ? (
-                  <View className="gap-3 rounded-lg border border-[#dbeafe] bg-[#eff6ff] p-3">
+                  <View className="gap-3 rounded-lg border border-[#1e3a8a] bg-[#1e3a8a] p-3">
                     <View className="flex-row items-center gap-2">
                       <Ionicons name="flash-outline" size={20} color="#1d4ed8" />
                       <Text className="flex-1 text-base font-extrabold text-[#1d4ed8]">Combate iniciado</Text>
@@ -313,7 +313,7 @@ export default function RoomJoinScreen() {
                   <>
                     <Pressable
                       className={`min-h-11 flex-row items-center justify-center gap-2 rounded-lg px-4 active:opacity-80 ${
-                        ready ? 'bg-[#15803d]' : 'border border-[#15803d] bg-white'
+                        ready ? 'bg-[#15803d]' : 'border border-[#15803d] bg-beasts-panel'
                       } ${settingReady || (!ready && !activeTeam) ? 'opacity-45' : ''}`}
                       disabled={settingReady || (!ready && !activeTeam)}
                       onPress={() => void toggleReady()}>
@@ -333,15 +333,15 @@ export default function RoomJoinScreen() {
                       )}
                     </Pressable>
                     <Pressable
-                      className={`min-h-11 items-center justify-center rounded-lg border border-[#bb3e03] bg-white px-4 active:opacity-80 ${
+                      className={`min-h-11 items-center justify-center rounded-lg border border-[#c2410c] bg-beasts-panel px-4 active:opacity-80 ${
                         leaving || ready ? 'opacity-45' : ''
                       }`}
                       disabled={leaving || ready}
                       onPress={() => void leaveRoom()}>
                       {leaving ? (
-                        <ActivityIndicator color="#bb3e03" />
+                        <ActivityIndicator color="#c2410c" />
                       ) : (
-                        <Text className="text-sm font-extrabold text-[#bb3e03]">Salir de la sala</Text>
+                        <Text className="text-sm font-extrabold text-[#c2410c]">Salir de la sala</Text>
                       )}
                     </Pressable>
                   </>
@@ -378,7 +378,7 @@ function LobbyPlayerLine({
   username?: string | null;
 }) {
   return (
-    <View className="flex-row items-center justify-between rounded-lg bg-white px-3 py-2">
+    <View className="flex-row items-center justify-between rounded-lg bg-beasts-panel px-3 py-2">
       <Text className="text-xs font-extrabold uppercase text-beasts-muted">{label}</Text>
       <View className="flex-row items-center gap-1.5">
         {username ? (
@@ -386,7 +386,7 @@ function LobbyPlayerLine({
             <Ionicons
               name={ready ? 'checkmark-circle' : 'person-circle-outline'}
               size={18}
-              color={ready ? '#15803d' : '#68758a'}
+              color={ready ? '#15803d' : '#94a3b8'}
             />
             <Text className="max-w-[150px] text-sm font-extrabold text-beasts-ink" numberOfLines={1}>
               {username}
@@ -394,7 +394,7 @@ function LobbyPlayerLine({
           </>
         ) : (
           <>
-            <Ionicons name="ellipse-outline" size={16} color="#68758a" />
+            <Ionicons name="ellipse-outline" size={16} color="#94a3b8" />
             <Text className="text-sm font-semibold text-beasts-muted">Libre</Text>
           </>
         )}

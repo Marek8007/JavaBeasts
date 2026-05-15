@@ -34,9 +34,9 @@ type IoniconName = ComponentProps<typeof Ionicons>['name'];
 const DEFAULT_TEAM_ICON: IoniconName = 'paw-outline';
 const TYPE_STYLES: Record<string, { badge: string; border: string; row: string; text: string }> = {
   Agua: {
-    badge: 'bg-[#dbeafe]',
+    badge: 'bg-[#1e3a8a]',
     border: 'border-[#93c5fd]',
-    row: 'bg-[#eff6ff]',
+    row: 'bg-[#1e3a8a]',
     text: 'text-[#1d4ed8]',
   },
   Electrico: {
@@ -48,27 +48,27 @@ const TYPE_STYLES: Record<string, { badge: string; border: string; row: string; 
   Fuego: {
     badge: 'bg-[#ffedd5]',
     border: 'border-[#fb923c]',
-    row: 'bg-[#fff7ed]',
+    row: 'bg-[#431407]',
     text: 'text-[#c2410c]',
   },
   Normal: {
     badge: 'bg-[#e5e7eb]',
     border: 'border-[#cbd5e1]',
-    row: 'bg-[#f8fafc]',
-    text: 'text-[#475569]',
+    row: 'bg-[#111827]',
+    text: 'text-[#cbd5e1]',
   },
   Planta: {
-    badge: 'bg-[#dcfce7]',
+    badge: 'bg-[#14532d]',
     border: 'border-[#86efac]',
-    row: 'bg-[#f0fdf4]',
+    row: 'bg-[#052e16]',
     text: 'text-[#15803d]',
   },
 };
 
 const DEFAULT_TYPE_STYLE = {
-  badge: 'bg-[#e8edf5]',
+  badge: 'bg-[#1e3a8a]',
   border: 'border-beasts-line',
-  row: 'bg-white',
+  row: 'bg-beasts-panel',
   text: 'text-beasts-blue',
 };
 
@@ -300,12 +300,12 @@ export default function TeamCompositionScreen() {
 
   return (
     <SafeAreaView className="flex-1 bg-beasts-soft">
-      <View className="flex-1 px-[18px] pt-6">
+      <View className="flex-1 px-[18px] pt-9">
         <View className="mb-[18px] flex-row items-center gap-3">
           <Pressable
-            className="h-[42px] w-[42px] items-center justify-center rounded-lg bg-white active:opacity-80"
+            className="h-[42px] w-[42px] items-center justify-center rounded-lg bg-beasts-panel active:opacity-80"
             onPress={() => router.back()}>
-            <Ionicons name="chevron-back" size={22} color="#1e4f8f" />
+            <Ionicons name="chevron-back" size={22} color="#1d4ed8" />
           </Pressable>
 
           <View className="h-[46px] w-[46px] items-center justify-center rounded-lg bg-beasts-blue">
@@ -322,7 +322,7 @@ export default function TeamCompositionScreen() {
 
         {loading ? (
           <View className="flex-1 items-center justify-center px-6">
-            <ActivityIndicator color="#1e4f8f" />
+            <ActivityIndicator color="#1d4ed8" />
             <Text className="mt-2 text-center text-sm leading-5 text-beasts-muted">
               Cargando composicion...
             </Text>
@@ -346,7 +346,7 @@ export default function TeamCompositionScreen() {
             data={slots}
             keyExtractor={(item) => String(item.slot)}
             refreshControl={
-              <RefreshControl refreshing={refreshing} tintColor="#1e4f8f" onRefresh={refreshComposition} />
+              <RefreshControl refreshing={refreshing} tintColor="#1d4ed8" onRefresh={refreshComposition} />
             }
             renderItem={({ item }) => (
               <TeamSlotCard
@@ -366,7 +366,7 @@ export default function TeamCompositionScreen() {
           visible={selectedSlot !== null}
           onRequestClose={closeJaBeaPicker}>
           <View className="flex-1 justify-end bg-[rgba(23,32,51,0.45)]">
-            <View className="h-[92%] rounded-t-lg bg-white px-[18px] pb-5 pt-4">
+            <View className="h-[92%] rounded-t-lg bg-beasts-panel px-[18px] pb-10 pt-4">
               <View className="mb-4 flex-row items-center justify-between gap-4">
                 <View className="flex-1">
                   <Text className="text-xl font-extrabold text-beasts-ink">
@@ -377,15 +377,15 @@ export default function TeamCompositionScreen() {
                   </Text>
                 </View>
                 <Pressable
-                  className="h-10 w-10 items-center justify-center rounded-lg bg-[#e8edf5] active:opacity-80"
+                  className="h-10 w-10 items-center justify-center rounded-lg bg-[#1e3a8a] active:opacity-80"
                   onPress={closeJaBeaPicker}>
-                  <Ionicons name="close" size={22} color="#1e4f8f" />
+                  <Ionicons name="close" size={22} color="#1d4ed8" />
                 </Pressable>
               </View>
 
               {jabeasLoading ? (
                 <View className="min-h-[260px] items-center justify-center">
-                  <ActivityIndicator color="#1e4f8f" />
+                  <ActivityIndicator color="#1d4ed8" />
                   <Text className="mt-2 text-sm text-beasts-muted">Cargando JaBeas...</Text>
                 </View>
               ) : jabeasError ? (
@@ -460,9 +460,9 @@ function TeamSlotCard({
   if (!member) {
     return (
       <Pressable
-        className="min-h-[96px] flex-row items-center rounded-lg border border-dashed border-beasts-line bg-white px-4 py-3 active:opacity-80"
+        className="min-h-[96px] flex-row items-center rounded-lg border border-dashed border-beasts-line bg-beasts-panel px-4 py-3 active:opacity-80"
         onPress={onAdd}>
-        <View className="mr-3 h-12 w-12 items-center justify-center rounded-lg bg-[#e8edf5]">
+        <View className="mr-3 h-12 w-12 items-center justify-center rounded-lg bg-[#1e3a8a]">
           <Text className="text-base font-extrabold text-beasts-blue">{slot.slot}</Text>
         </View>
         <View className="flex-1">
@@ -471,13 +471,13 @@ function TeamSlotCard({
             Aqui se podra anadir un JaBea al equipo.
           </Text>
         </View>
-        <Ionicons name="add-circle-outline" size={24} color="#68758a" />
+        <Ionicons name="add-circle-outline" size={24} color="#94a3b8" />
       </Pressable>
     );
   }
 
   return (
-    <View className="rounded-lg bg-white px-4 py-3">
+    <View className="rounded-lg bg-beasts-panel px-4 py-3">
       <View className="flex-row items-center">
         <View className="mr-3 h-12 w-12 items-center justify-center rounded-lg bg-beasts-blue">
           <Image
@@ -494,7 +494,7 @@ function TeamSlotCard({
         </View>
         <View className="flex-row items-center gap-1">
           <Pressable className="h-10 w-10 items-center justify-center active:opacity-75" onPress={onEdit}>
-            <Ionicons name="create-outline" size={20} color="#1e4f8f" />
+            <Ionicons name="create-outline" size={20} color="#1d4ed8" />
           </Pressable>
           <Pressable
             className="h-10 w-10 items-center justify-center active:opacity-75"
@@ -548,7 +548,7 @@ function JaBeaPickerRow({
           </Text>
         </View>
 
-        <Ionicons name="chevron-forward" size={20} color="#68758a" />
+        <Ionicons name="chevron-forward" size={20} color="#94a3b8" />
       </Pressable>
     </View>
   );
@@ -582,10 +582,10 @@ function SlotMoveEditor({
   const typeStyle = TYPE_STYLES[selectedJaBea.typeName] ?? DEFAULT_TYPE_STYLE;
 
   return (
-    <View className="flex-1 gap-3">
+    <View className="flex-1 gap-3 pb-2">
       {onBack ? (
         <Pressable className="self-start flex-row items-center gap-1.5 py-1 active:opacity-75" onPress={onBack}>
-          <Ionicons name="chevron-back" size={18} color="#1e4f8f" />
+          <Ionicons name="chevron-back" size={18} color="#1d4ed8" />
           <Text className="text-sm font-extrabold text-beasts-blue">Cambiar JaBea</Text>
         </Pressable>
       ) : null}
@@ -601,7 +601,7 @@ function SlotMoveEditor({
             <Text className="text-xl font-extrabold text-beasts-ink" numberOfLines={1}>
               {selectedJaBea.name}
             </Text>
-            <Text className="mt-1 text-sm leading-5 text-[#42506a]">{selectedJaBea.description}</Text>
+            <Text className="mt-1 text-sm leading-5 text-[#cbd5e1]">{selectedJaBea.description}</Text>
           </View>
           <View className={`rounded-lg px-3 py-2 ${typeStyle.badge}`}>
             <Text className={`text-xs font-extrabold uppercase ${typeStyle.text}`}>
@@ -618,7 +618,7 @@ function SlotMoveEditor({
         </View>
 
         {selectedJaBea.uniqueMove ? (
-          <View className="mt-3 rounded-lg bg-white px-3 py-3">
+          <View className="mt-3 rounded-lg bg-beasts-panel px-3 py-3">
             <Text className="text-xs font-extrabold uppercase text-beasts-muted">Movimiento unico</Text>
             <Text className="mt-1 text-sm font-extrabold text-beasts-ink">
               {selectedJaBea.uniqueMove.name}
@@ -627,7 +627,7 @@ function SlotMoveEditor({
               Dano {selectedJaBea.uniqueMove.damage} · Precision {selectedJaBea.uniqueMove.accuracy}
             </Text>
             {selectedJaBea.uniqueMove.description ? (
-              <Text className="mt-2 text-xs leading-4 text-[#42506a]">
+              <Text className="mt-2 text-xs leading-4 text-[#cbd5e1]">
                 {selectedJaBea.uniqueMove.description}
               </Text>
             ) : null}
@@ -635,12 +635,12 @@ function SlotMoveEditor({
         ) : null}
       </View>
 
-      <View className="flex-1 rounded-lg border border-beasts-line bg-[#f8fafc] p-3">
+      <View className="flex-1 rounded-lg border border-beasts-line bg-[#111827] p-3">
         <Text className="text-sm font-extrabold text-beasts-ink">Elige sus movimientos</Text>
 
         {loading ? (
           <View className="min-h-[120px] items-center justify-center">
-            <ActivityIndicator color="#1e4f8f" />
+            <ActivityIndicator color="#1d4ed8" />
             <Text className="mt-2 text-sm text-beasts-muted">Cargando movimientos...</Text>
           </View>
         ) : (
@@ -663,7 +663,7 @@ function SlotMoveEditor({
             </View>
 
             {slotError ? (
-              <View className="rounded-lg border border-[#f7d6bf] bg-[#fff4ed] px-3 py-2">
+              <View className="rounded-lg border border-[#9a3412] bg-[#431407] px-3 py-2">
                 <Text className="text-sm font-semibold leading-5 text-beasts-warning">{slotError}</Text>
               </View>
             ) : null}
@@ -742,7 +742,7 @@ function MovePicker({
 
 function StatBox({ label, value }: { label: string; value: number }) {
   return (
-    <View className="flex-1 rounded-lg bg-white px-2 py-2">
+    <View className="flex-1 rounded-lg bg-beasts-panel px-2 py-2">
       <Text className="text-center text-[11px] font-extrabold uppercase text-beasts-muted">{label}</Text>
       <Text className="mt-1 text-center text-sm font-extrabold text-beasts-ink">{value}</Text>
     </View>
@@ -751,7 +751,7 @@ function StatBox({ label, value }: { label: string; value: number }) {
 
 function MoveLine({ label, name }: { label: string; name: string }) {
   return (
-    <View className="flex-row items-center justify-between rounded-lg bg-[#f8fafc] px-3 py-2">
+    <View className="flex-row items-center justify-between rounded-lg bg-[#111827] px-3 py-2">
       <Text className="text-xs font-extrabold uppercase text-beasts-muted">{label}</Text>
       <Text className="ml-3 flex-1 text-right text-sm font-semibold text-beasts-ink" numberOfLines={1}>
         {name}

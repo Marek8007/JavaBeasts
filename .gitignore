@@ -4,6 +4,8 @@ JavaBeasts-BBDD/data/db/mysql/*
 
 JavaBeasts-BBDD/.env
 JavaBeasts-Backend/.env
+deploy/env/local.env
+deploy/env/cloud.env
 
 # JavaBeasts-Backend
 JavaBeasts-Backend/src/main/java/com/marcos/javabeasts_backend/Testing.java
@@ -13,3 +15,5 @@ JavaBeasts-JavaFX/.idea/
 JavaBeasts-JavaFX/target/
 
 .idea/
+
+JavaBeasts-Mobile/.env

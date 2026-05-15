@@ -1,13 +1,16 @@
-import { logoutAction } from '@/actions/auth.actions';
+import { getProfileAction, logoutAction } from '@/actions/auth.actions';
 import { leaveRoomAction } from '@/actions/lobby-socket.actions';
 import { useAuthStore } from '@/stores/authStore';
 import { useLobbyStore } from '@/stores/lobbyStore';
 import { Ionicons } from '@expo/vector-icons';
+import { useFocusEffect } from '@react-navigation/native';
 import { router } from 'expo-router';
+import { useCallback } from 'react';
 import { Alert, Pressable, SafeAreaView, Text, View } from 'react-native';
 
 export default function HomeScreen() {
   const user = useAuthStore((state) => state.user);
+  const updateUser = useAuthStore((state) => state.updateUser);
   const clearSession = useAuthStore((state) => state.logout);
   const roomStatus = useLobbyStore((state) => state.roomStatus);
   const clearRoom = useLobbyStore((state) => state.clearRoom);
@@ -38,6 +41,23 @@ export default function HomeScreen() {
     }
   }
 
+  useFocusEffect(
+    useCallback(() => {
+      if (!user?.username) {
+        return;
+      }
+
+      void (async () => {
+        try {
+          const refreshedUser = await getProfileAction(user.username);
+          await updateUser(refreshedUser);
+        } catch {
+          // Keep the cached user values if the refresh fails.
+        }
+      })();
+    }, [user?.username, updateUser])
+  );
+
   return (
     <SafeAreaView className="flex-1 bg-beasts-soft">
       <View className="flex-1 justify-center px-6">
@@ -46,15 +66,15 @@ export default function HomeScreen() {
           <Text className="text-base text-beasts-muted">Mando movil conectado al backend.</Text>
         </View>
 
-        <View className="items-center gap-3 rounded-lg bg-white p-[22px] shadow-lg shadow-beasts-ink/10">
-          <View className="rounded-lg bg-[#e8edf5] p-2.5">
-            <Ionicons name="person-circle-outline" size={42} color="#1e4f8f" />
+        <View className="items-center gap-3 rounded-lg bg-beasts-panel p-[22px] shadow-lg shadow-beasts-ink/10">
+          <View className="rounded-lg bg-[#1e3a8a] p-2.5">
+            <Ionicons name="person-circle-outline" size={42} color="#1d4ed8" />
           </View>
           <Text className="text-[26px] font-extrabold text-beasts-ink">{user?.username ?? 'Jugador'}</Text>
           <Text className="text-[15px] text-beasts-muted">
             Victorias {user?.matchesWon ?? 0} - Derrotas {user?.matchesLost ?? 0}
           </Text>
-          <Text className="text-center text-sm leading-5 text-[#42506a]">
+          <Text className="text-center text-sm leading-5 text-[#cbd5e1]">
             Sesion lista para gestionar equipos y entrar al lobby.
           </Text>
 

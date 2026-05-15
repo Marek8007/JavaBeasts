@@ -23,6 +23,7 @@ import javafx.scene.text.Font;
 import javafx.scene.text.FontWeight;
 
 import java.text.Normalizer;
+import java.util.List;
 import java.util.Locale;
 
 public final class BattleScreenFactory {
@@ -31,20 +32,16 @@ public final class BattleScreenFactory {
     }
 
     public static Scene createBattleScene(RoomStatusData roomStatus) {
-        Label title = new Label("Combate");
-        title.setFont(Font.font("System", FontWeight.BOLD, 34));
-        title.setStyle("-fx-text-fill: #f8fafc;");
+        Label title = new Label("Arena de Combate");
+        title.setFont(Font.font("System", FontWeight.EXTRA_BOLD, 38));
+        title.setStyle("-fx-text-fill: #fff7ed;");
 
-        Label subtitle = new Label("Pantalla base de combate");
+        Label subtitle = new Label("Preparando enfrentamiento");
         subtitle.setFont(Font.font(18));
-        subtitle.setStyle("-fx-text-fill: #cbd5e1;");
+        subtitle.setStyle("-fx-text-fill: #fdba74;");
 
-        Label roomCodeLabel = new Label("Sala " + safeRoomCode(roomStatus));
-        roomCodeLabel.setFont(Font.font("System", FontWeight.SEMI_BOLD, 18));
-        roomCodeLabel.setStyle("-fx-text-fill: #93c5fd;");
-
-        VBox header = new VBox(8, title, subtitle, roomCodeLabel);
-        header.setAlignment(Pos.CENTER_LEFT);
+        VBox header = new VBox(8, title, subtitle);
+        header.setAlignment(Pos.CENTER);
 
         VBox playerOnePanel = createBattlePlayerPanel("Jugador 1", roomStatus.getPlayerOne());
         VBox playerTwoPanel = createBattlePlayerPanel("Jugador 2", roomStatus.getPlayerTwo());
@@ -62,24 +59,24 @@ public final class BattleScreenFactory {
 
         Label footerHint = new Label("Este sera el punto de entrada para la futura pantalla de batalla");
         footerHint.setFont(Font.font(14));
-        footerHint.setStyle("-fx-text-fill: #94a3b8;");
+        footerHint.setStyle("-fx-text-fill: #fed7aa;");
 
         VBox centerPanel = new VBox(12, turnLabel, statusLabel, footerHint);
         centerPanel.setAlignment(Pos.CENTER);
         centerPanel.setPadding(new Insets(24));
         centerPanel.setStyle(
-                "-fx-background-color: rgba(30, 41, 59, 0.85);" +
+                "-fx-background-color: rgba(69, 10, 10, 0.7);" +
                 "-fx-background-radius: 18;" +
                 "-fx-border-radius: 18;" +
-                "-fx-border-color: rgba(148, 163, 184, 0.35);"
+                "-fx-border-color: rgba(251, 146, 60, 0.45);"
         );
 
-        VBox content = new VBox(28, header, battleRow, centerPanel);
-        content.setAlignment(Pos.TOP_LEFT);
+        VBox content = new VBox(28, header, centerPanel, battleRow);
+        content.setAlignment(Pos.TOP_CENTER);
 
         BorderPane root = new BorderPane(content);
         root.setPadding(new Insets(32));
-        root.setStyle("-fx-background-color: linear-gradient(to bottom right, #0f172a, #1e293b);");
+        root.setStyle("-fx-background-color: linear-gradient(to bottom, #1f0a0a, #431407, #0f172a);");
 
         return new Scene(root, 960, 540);
     }
@@ -89,21 +86,17 @@ public final class BattleScreenFactory {
     }
 
     public static BattleSceneView createBattleSceneView(BattleSnapshotData snapshot) {
-        Label title = new Label("Combate");
-        title.setFont(Font.font("System", FontWeight.BOLD, 34));
-        title.setStyle("-fx-text-fill: #f8fafc;");
+        Label title = new Label("Arena de Combate");
+        title.setFont(Font.font("System", FontWeight.EXTRA_BOLD, 38));
+        title.setStyle("-fx-text-fill: #fff7ed;");
 
         Label subtitle = new Label();
         subtitle.setFont(Font.font(18));
-        Label roomCodeLabel = new Label();
-        roomCodeLabel.setFont(Font.font("System", FontWeight.SEMI_BOLD, 18));
-        roomCodeLabel.setStyle("-fx-text-fill: #93c5fd;");
+        VBox header = new VBox(8, title, subtitle);
+        header.setAlignment(Pos.CENTER);
 
-        VBox header = new VBox(8, title, subtitle, roomCodeLabel);
-        header.setAlignment(Pos.CENTER_LEFT);
-
-        BattlePlayerPanelView playerOnePanel = createBattlePlayerPanelView("Jugador 1");
-        BattlePlayerPanelView playerTwoPanel = createBattlePlayerPanelView("Jugador 2");
+        BattlePlayerPanelView playerOnePanel = createBattlePlayerPanelView("Jugador 1", true);
+        BattlePlayerPanelView playerTwoPanel = createBattlePlayerPanelView("Jugador 2", false);
 
         HBox battleRow = new HBox(24, playerOnePanel.getRoot(), playerTwoPanel.getRoot());
         battleRow.setAlignment(Pos.CENTER);
@@ -117,29 +110,28 @@ public final class BattleScreenFactory {
 
         Label footerHint = new Label();
         footerHint.setFont(Font.font(14));
-        footerHint.setStyle("-fx-text-fill: #94a3b8;");
+        footerHint.setStyle("-fx-text-fill: #fed7aa;");
 
         VBox centerPanel = new VBox(12, turnLabel, statusLabel, footerHint);
         centerPanel.setAlignment(Pos.CENTER);
         centerPanel.setPadding(new Insets(24));
         centerPanel.setStyle(
-                "-fx-background-color: rgba(30, 41, 59, 0.85);" +
+                "-fx-background-color: rgba(69, 10, 10, 0.7);" +
                 "-fx-background-radius: 18;" +
                 "-fx-border-radius: 18;" +
-                "-fx-border-color: rgba(148, 163, 184, 0.35);"
+                "-fx-border-color: rgba(251, 146, 60, 0.45);"
         );
 
-        VBox content = new VBox(28, header, battleRow, centerPanel);
-        content.setAlignment(Pos.TOP_LEFT);
+        VBox content = new VBox(28, header, centerPanel, battleRow);
+        content.setAlignment(Pos.TOP_CENTER);
 
         BorderPane root = new BorderPane(content);
         root.setPadding(new Insets(32));
-        root.setStyle("-fx-background-color: linear-gradient(to bottom right, #0f172a, #1e293b);");
+        root.setStyle("-fx-background-color: linear-gradient(to bottom, #1f0a0a, #431407, #0f172a);");
 
         BattleSceneView sceneView = new BattleSceneView(
                 new Scene(root, 960, 540),
                 subtitle,
-                roomCodeLabel,
                 turnLabel,
                 statusLabel,
                 footerHint,
@@ -236,34 +228,37 @@ public final class BattleScreenFactory {
         return panel;
     }
 
-    private static BattlePlayerPanelView createBattlePlayerPanelView(String slotTitle) {
+    private static BattlePlayerPanelView createBattlePlayerPanelView(String slotTitle, boolean imageOnRight) {
         Label slotLabel = new Label(slotTitle);
         slotLabel.setFont(Font.font("System", FontWeight.BOLD, 18));
-        slotLabel.setStyle("-fx-text-fill: #f8fafc;");
+        slotLabel.setStyle("-fx-text-fill: #7c2d12;");
 
         Label usernameLabel = new Label();
         usernameLabel.setFont(Font.font("System", FontWeight.SEMI_BOLD, 24));
-        usernameLabel.setStyle("-fx-text-fill: #e2e8f0;");
+        usernameLabel.setStyle("-fx-text-fill: #0f172a;");
 
-        Label teamLabel = new Label();
-        teamLabel.setFont(Font.font(16));
-        teamLabel.setStyle("-fx-text-fill: #cbd5e1;");
+        Label aliveCountLabel = new Label();
+        aliveCountLabel.setFont(Font.font("System", FontWeight.BOLD, 14));
+        aliveCountLabel.setStyle("-fx-text-fill: #0f766e;");
 
         ImageView jaBeaImage = createJaBeaImage("placeholder", 96);
 
         Label activeJaBeaLabel = new Label();
-        activeJaBeaLabel.setFont(Font.font(16));
-        activeJaBeaLabel.setStyle("-fx-text-fill: #cbd5e1;");
+        activeJaBeaLabel.setFont(Font.font("System", FontWeight.BOLD, 18));
+        activeJaBeaLabel.setStyle("-fx-text-fill: #334155;");
 
         Region spacer = new Region();
         VBox.setVgrow(spacer, Priority.ALWAYS);
 
-        HBox creatureRow = new HBox(18, jaBeaImage, new VBox(6, teamLabel, activeJaBeaLabel));
-        creatureRow.setAlignment(Pos.CENTER_LEFT);
+        VBox creatureInfo = new VBox(8, activeJaBeaLabel, aliveCountLabel);
+        HBox creatureRow = imageOnRight
+                ? new HBox(18, creatureInfo, jaBeaImage)
+                : new HBox(18, jaBeaImage, creatureInfo);
+        creatureRow.setAlignment(imageOnRight ? Pos.CENTER_RIGHT : Pos.CENTER_LEFT);
 
         Label hpLabel = new Label();
         hpLabel.setFont(Font.font("System", FontWeight.BOLD, 16));
-        hpLabel.setStyle("-fx-text-fill: #e2e8f0;");
+        hpLabel.setStyle("-fx-text-fill: #0f172a;");
 
         ProgressBar healthBar = new ProgressBar(1);
         healthBar.setMaxWidth(Double.MAX_VALUE);
@@ -279,13 +274,13 @@ public final class BattleScreenFactory {
         panel.setPrefWidth(420);
         panel.setMinHeight(220);
         panel.setStyle(
-                "-fx-background-color: rgba(15, 23, 42, 0.88);" +
+                "-fx-background-color: rgba(248, 250, 252, 0.94);" +
                 "-fx-background-radius: 18;" +
                 "-fx-border-radius: 18;" +
-                "-fx-border-color: rgba(148, 163, 184, 0.35);"
+                "-fx-border-color: rgba(251, 146, 60, 0.28);"
         );
 
-        return new BattlePlayerPanelView(panel, usernameLabel, teamLabel, jaBeaImage, activeJaBeaLabel, hpLabel, healthBar);
+        return new BattlePlayerPanelView(panel, usernameLabel, aliveCountLabel, jaBeaImage, activeJaBeaLabel, hpLabel, healthBar);
     }
 
     private static String safeRoomCode(RoomStatusData roomStatus) {
@@ -405,7 +400,6 @@ public final class BattleScreenFactory {
     public static final class BattleSceneView {
         private final Scene scene;
         private final Label subtitleLabel;
-        private final Label roomCodeLabel;
         private final Label turnLabel;
         private final Label statusLabel;
         private final Label footerHintLabel;
@@ -415,7 +409,6 @@ public final class BattleScreenFactory {
         private BattleSceneView(
                 Scene scene,
                 Label subtitleLabel,
-                Label roomCodeLabel,
                 Label turnLabel,
                 Label statusLabel,
                 Label footerHintLabel,
@@ -424,7 +417,6 @@ public final class BattleScreenFactory {
         ) {
             this.scene = scene;
             this.subtitleLabel = subtitleLabel;
-            this.roomCodeLabel = roomCodeLabel;
             this.turnLabel = turnLabel;
             this.statusLabel = statusLabel;
             this.footerHintLabel = footerHintLabel;
@@ -439,9 +431,8 @@ public final class BattleScreenFactory {
         public void update(BattleSnapshotData snapshot) {
             boolean finished = snapshot != null && snapshot.isFinished();
 
-            subtitleLabel.setText(finished ? "Combate finalizado" : "Combate en curso");
-            subtitleLabel.setStyle("-fx-text-fill: " + (finished ? "#86efac" : "#cbd5e1") + ";");
-            roomCodeLabel.setText("Sala " + safeRoomCode(snapshot));
+            subtitleLabel.setText(finished ? "Duelo terminado" : "Combate en curso");
+            subtitleLabel.setStyle("-fx-text-fill: " + (finished ? "#86efac" : "#fdba74") + ";");
             turnLabel.setText(finished ? safeBattleResult(snapshot) : "Turno " + safeTurnNumber(snapshot));
             turnLabel.setStyle("-fx-text-fill: " + (finished ? "#86efac" : "#fcd34d") + ";");
             statusLabel.setText(safeBattleMessage(snapshot));
@@ -455,7 +446,7 @@ public final class BattleScreenFactory {
     private static final class BattlePlayerPanelView {
         private final VBox root;
         private final Label usernameLabel;
-        private final Label teamLabel;
+        private final Label aliveCountLabel;
         private final ImageView jaBeaImage;
         private final Label activeJaBeaLabel;
         private final Label hpLabel;
@@ -465,7 +456,7 @@ public final class BattleScreenFactory {
         private BattlePlayerPanelView(
                 VBox root,
                 Label usernameLabel,
-                Label teamLabel,
+                Label aliveCountLabel,
                 ImageView jaBeaImage,
                 Label activeJaBeaLabel,
                 Label hpLabel,
@@ -473,7 +464,7 @@ public final class BattleScreenFactory {
         ) {
             this.root = root;
             this.usernameLabel = usernameLabel;
-            this.teamLabel = teamLabel;
+            this.aliveCountLabel = aliveCountLabel;
             this.jaBeaImage = jaBeaImage;
             this.activeJaBeaLabel = activeJaBeaLabel;
             this.hpLabel = hpLabel;
@@ -491,16 +482,13 @@ public final class BattleScreenFactory {
                     : "Jugador pendiente";
             usernameLabel.setText(username);
 
-            String teamName = player != null && player.getTeamName() != null && !player.getTeamName().isBlank()
-                    ? player.getTeamName()
-                    : "Equipo pendiente";
-            teamLabel.setText("Equipo: " + teamName);
+            aliveCountLabel.setText("JaBeas vivos: " + countAliveCreatures(player) + " / " + countTotalCreatures(player));
 
             BattleCreatureSnapshotData activeJaBea = player != null ? player.getActiveJaBea() : null;
             String activeJaBeaName = activeJaBea != null && activeJaBea.getName() != null && !activeJaBea.getName().isBlank()
                     ? activeJaBea.getName()
                     : "Pendiente";
-            activeJaBeaLabel.setText("JaBea activo: " + activeJaBeaName);
+            activeJaBeaLabel.setText(activeJaBeaName);
             jaBeaImage.setImage(new Image(BattleScreenFactory.class.getResourceAsStream(resolveJaBeaImagePath(activeJaBeaName))));
 
             int currentHealth = activeJaBea != null && activeJaBea.getCurrentHealth() != null
@@ -515,5 +503,26 @@ public final class BattleScreenFactory {
             healthRatioProperty.set(healthRatio);
             healthBar.setStyle("-fx-accent: " + healthColor(healthRatio) + ";");
         }
+    }
+
+    private static int countAliveCreatures(BattlePlayerSnapshotData player) {
+        List<BattleCreatureSnapshotData> teamCreatures = player != null ? player.getTeamCreatures() : null;
+        if (teamCreatures == null || teamCreatures.isEmpty()) {
+            BattleCreatureSnapshotData activeJaBea = player != null ? player.getActiveJaBea() : null;
+            return activeJaBea != null && activeJaBea.getCurrentHealth() != null && activeJaBea.getCurrentHealth() > 0 ? 1 : 0;
+        }
+
+        return (int) teamCreatures.stream()
+                .filter(creature -> creature != null && creature.getCurrentHealth() != null && creature.getCurrentHealth() > 0)
+                .count();
+    }
+
+    private static int countTotalCreatures(BattlePlayerSnapshotData player) {
+        List<BattleCreatureSnapshotData> teamCreatures = player != null ? player.getTeamCreatures() : null;
+        if (teamCreatures == null || teamCreatures.isEmpty()) {
+            return player != null && player.getActiveJaBea() != null ? 1 : 0;
+        }
+
+        return teamCreatures.size();
     }
 }

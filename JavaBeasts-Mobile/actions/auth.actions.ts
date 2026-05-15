@@ -18,3 +18,10 @@ export const logoutAction = async (username: string): Promise<AuthResponse> => {
   );
   return data;
 };
+
+export const getProfileAction = async (username: string): Promise<AuthResponse> => {
+  const { data } = await javabeastsApi.get<AuthResponse>(
+    `/auth/profile?username=${encodeURIComponent(username)}`
+  );
+  return data;
+};

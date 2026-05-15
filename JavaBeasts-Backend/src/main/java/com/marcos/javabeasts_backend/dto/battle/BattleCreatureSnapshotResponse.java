@@ -6,6 +6,8 @@ public record BattleCreatureSnapshotResponse(
         Integer slot,
         Integer jaBeasId,
         String name,
+        Integer typeId,
+        String typeName,
         Integer currentHealth,
         Integer maxHealth,
         Integer damage,

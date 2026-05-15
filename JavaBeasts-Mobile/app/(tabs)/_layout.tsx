@@ -30,6 +30,11 @@ export default function TabLayout() {
     <Tabs
       screenOptions={{
         tabBarActiveTintColor: Colors[colorScheme ?? 'light'].tint,
+        tabBarInactiveTintColor: '#64748b',
+        tabBarStyle: {
+          backgroundColor: '#0f172a',
+          borderTopColor: '#334155',
+        },
         headerShown: false,
         tabBarButton: HapticTab,
       }}>
@@ -47,6 +52,14 @@ export default function TabLayout() {
         options={{
           title: 'Equipos',
           tabBarIcon: ({ color, size }) => <Ionicons size={size} name="albums-outline" color={color} />,
+        }}
+      />
+      <Tabs.Screen
+        name="history"
+        listeners={preventLeavingRoomWhenReady}
+        options={{
+          title: 'Historial',
+          tabBarIcon: ({ color, size }) => <Ionicons size={size} name="time-outline" color={color} />,
         }}
       />
       <Tabs.Screen

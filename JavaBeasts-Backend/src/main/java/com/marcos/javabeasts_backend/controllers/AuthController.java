@@ -10,6 +10,7 @@ import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.bind.annotation.GetMapping;
 
 @RestController
 @RequestMapping("/auth")
@@ -34,5 +35,10 @@ public class AuthController {
     @PostMapping("/logout")
     public AuthResponse logout(@RequestParam String username) {
         return authService.logout(username);
+    }
+
+    @GetMapping("/profile")
+    public AuthResponse profile(@RequestParam String username) {
+        return authService.profile(username);
     }
 }

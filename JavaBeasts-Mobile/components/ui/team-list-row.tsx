@@ -28,19 +28,19 @@ export function TeamListRow({
 
   return (
     <View
-      className={`min-h-[68px] flex-row items-center border-b border-[#edf1f6] bg-white px-4 py-[9px] ${
+      className={`min-h-[68px] flex-row items-center border-b border-[#334155] bg-beasts-panel px-4 py-[9px] ${
         disabled ? 'opacity-65' : ''
       }`}>
       <Pressable
         className={`mr-3 h-[50px] w-[50px] items-center justify-center rounded-lg active:opacity-75 ${
-          team.active ? 'bg-beasts-blue' : 'bg-[#e8edf5]'
+          team.active ? 'bg-beasts-blue' : 'bg-[#1e3a8a]'
         }`}
         disabled={disabled || team.active}
         onPress={onActivate}>
         {activating ? (
-          <ActivityIndicator color="#1e4f8f" />
+          <ActivityIndicator color="#1d4ed8" />
         ) : (
-          <Ionicons name={iconName} size={22} color={team.active ? '#ffffff' : '#1e4f8f'} />
+          <Ionicons name={iconName} size={22} color={team.active ? '#ffffff' : '#1d4ed8'} />
         )}
       </Pressable>
 
@@ -54,7 +54,7 @@ export function TeamListRow({
         className="ml-2 h-10 w-10 items-center justify-center active:opacity-75"
         disabled={disabled}
         onPress={onRename}>
-        <Ionicons name="create-outline" size={20} color="#68758a" />
+        <Ionicons name="create-outline" size={20} color="#94a3b8" />
       </Pressable>
     </View>
   );

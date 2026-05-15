@@ -28,7 +28,7 @@ export function ThemedText({
     <Text
       className={typeClassName}
       style={[
-        { color: type === 'link' ? '#0a7ea4' : color },
+        { color: type === 'link' ? '#1d4ed8' : color },
         style,
       ]}
       {...rest}
