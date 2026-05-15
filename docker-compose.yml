@@ -12,7 +12,7 @@ services:
     ports:
       - "${MYSQL_PUBLIC_PORT:-33006}:3306"
     volumes:
-      - ./JavaBeasts-BBDD/data/db/mysql:/var/lib/mysql
+      - mysql_data:/var/lib/mysql
       - ./JavaBeasts-BBDD/init:/docker-entrypoint-initdb.d:ro
     healthcheck:
       test: ["CMD-SHELL", "mysqladmin ping -h localhost -u$${MYSQL_USER} -p$${MYSQL_PASSWORD}"]
@@ -48,3 +48,6 @@ services:
       JAVABEASTS_LOBBY_PORT: ${JAVABEASTS_LOBBY_PORT:-7878}
     volumes:
       - /tmp/.X11-unix:/tmp/.X11-unix
+
+volumes:
+  mysql_data:
