@@ -31,6 +31,17 @@ fi
 
 cd "$ROOT_DIR"
 
-docker compose \
+if docker compose version >/dev/null 2>&1; then
+  COMPOSE_COMMAND=(docker compose)
+elif command -v docker-compose >/dev/null 2>&1; then
+  COMPOSE_COMMAND=(docker-compose)
+else
+  echo "No se ha encontrado Docker Compose."
+  echo "Instala el plugin de Compose v2 o docker-compose en este equipo."
+  echo "Comprueba con: docker compose version"
+  exit 1
+fi
+
+"${COMPOSE_COMMAND[@]}" \
   --env-file "$ENV_FILE" \
   up --build backend javafx
