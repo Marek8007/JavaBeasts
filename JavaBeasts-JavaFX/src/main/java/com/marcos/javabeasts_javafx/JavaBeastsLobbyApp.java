@@ -11,6 +11,7 @@ import javafx.geometry.Insets;
 import javafx.geometry.Pos;
 import javafx.scene.Scene;
 import javafx.scene.control.Label;
+import javafx.scene.image.Image;
 import javafx.scene.layout.BorderPane;
 import javafx.scene.layout.HBox;
 import javafx.scene.layout.Priority;
@@ -52,25 +53,38 @@ public class JavaBeastsLobbyApp extends Application {
     @Override
     public void start(Stage stage) {
         primaryStage = stage;
+        stage.getIcons().add(new Image(
+                JavaBeastsLobbyApp.class.getResourceAsStream("/icons/javabeasts-icon.png")
+        ));
 
         Label title = new Label("JavaBeasts");
         title.setFont(Font.font("System", FontWeight.BOLD, 32));
-        title.setStyle("-fx-text-fill: #f3f4f6;");
+        title.setStyle("-fx-text-fill: #f8fafc;");
 
-        Label subtitle = new Label("Pantalla de sala");
-        subtitle.setFont(Font.font(18));
-        subtitle.setStyle("-fx-text-fill: #cbd5e1;");
+        Label subtitle = new Label("Codigo de sala");
+        subtitle.setFont(Font.font("System", FontWeight.BOLD, 20));
+        subtitle.setStyle("-fx-text-fill: #fcd34d;");
 
-        roomCodeLabel = new Label("Sala ----");
-        roomCodeLabel.setFont(Font.font("System", FontWeight.SEMI_BOLD, 20));
-        roomCodeLabel.setStyle("-fx-text-fill: #f8fafc;");
+        roomCodeLabel = new Label("------");
+        roomCodeLabel.setFont(Font.font("System", FontWeight.EXTRA_BOLD, 104));
+        roomCodeLabel.setStyle("-fx-text-fill: #ffffff;");
 
         phaseLabel = new Label("Lobby activo");
-        phaseLabel.setFont(Font.font("System", FontWeight.BOLD, 18));
-        phaseLabel.setStyle("-fx-text-fill: #93c5fd;");
+        phaseLabel.setFont(Font.font("System", FontWeight.BOLD, 22));
+        phaseLabel.setStyle("-fx-text-fill: #bfdbfe;");
 
-        VBox header = new VBox(8, title, subtitle, roomCodeLabel, phaseLabel);
-        header.setAlignment(Pos.CENTER_LEFT);
+        VBox header = new VBox(8, title);
+        header.setAlignment(Pos.TOP_LEFT);
+
+        VBox codePanel = new VBox(10, subtitle, roomCodeLabel, phaseLabel);
+        codePanel.setAlignment(Pos.CENTER);
+        codePanel.setPadding(new Insets(28, 40, 28, 40));
+        codePanel.setStyle(
+                "-fx-background-color: rgba(15, 23, 42, 0.68);" +
+                "-fx-background-radius: 28;" +
+                "-fx-border-radius: 28;" +
+                "-fx-border-color: rgba(252, 211, 77, 0.45);"
+        );
 
         playerOneCard = createUnavailableCard("Jugador 1");
         playerTwoCard = createUnavailableCard("Jugador 2");
@@ -81,14 +95,14 @@ public class JavaBeastsLobbyApp extends Application {
         playersRow.setAlignment(Pos.CENTER);
 
         VBox footer = new VBox(12, matchStatusLabel, connectionLabel);
-        footer.setAlignment(Pos.CENTER_LEFT);
+        footer.setAlignment(Pos.CENTER);
 
-        VBox content = new VBox(28, header, playersRow, footer);
-        content.setAlignment(Pos.TOP_LEFT);
+        VBox content = new VBox(28, header, codePanel, playersRow, footer);
+        content.setAlignment(Pos.TOP_CENTER);
 
         BorderPane root = new BorderPane(content);
         root.setPadding(new Insets(32));
-        root.setStyle("-fx-background-color: linear-gradient(to bottom right, #111827, #1f2937);");
+        root.setStyle("-fx-background-color: linear-gradient(to bottom, #0f172a, #1d4ed8, #0f172a);");
 
         lobbyScene = new Scene(root, 960, 540);
         stage.setTitle("JavaBeasts");
@@ -130,7 +144,7 @@ public class JavaBeastsLobbyApp extends Application {
     }
 
     private void applyRoomStatus(RoomStatusData roomStatus) {
-        roomCodeLabel.setText("Sala " + safeRoomCode(roomStatus));
+        roomCodeLabel.setText(safeRoomCode(roomStatus));
         replacePlayerCards(
                 createPlayerCard("Jugador 1", roomStatus.getPlayerOne()),
                 createPlayerCard("Jugador 2", roomStatus.getPlayerTwo())
@@ -154,7 +168,7 @@ public class JavaBeastsLobbyApp extends Application {
         }
 
         matchReady = false;
-        roomCodeLabel.setText("Sala ----");
+        roomCodeLabel.setText("------");
         phaseLabel.setText("Lobby no disponible");
         phaseLabel.setStyle("-fx-text-fill: #fca5a5;");
         replacePlayerCards(
@@ -342,14 +356,24 @@ public class JavaBeastsLobbyApp extends Application {
     }
 
     private static String resolveLobbyHost() {
-        return System.getProperty("javabeasts.lobby.host", DEFAULT_LOBBY_HOST);
+        String configuredHost = System.getProperty("javabeasts.lobby.host");
+        if (configuredHost == null || configuredHost.isBlank()) {
+            configuredHost = System.getenv("JAVABEASTS_LOBBY_HOST");
+        }
+
+        return configuredHost == null || configuredHost.isBlank() ? DEFAULT_LOBBY_HOST : configuredHost;
     }
 
     private static int resolveLobbyPort() {
-        String configuredPort = System.getProperty("javabeasts.lobby.port", String.valueOf(DEFAULT_LOBBY_PORT));
+        String configuredPort = System.getProperty("javabeasts.lobby.port");
+        if (configuredPort == null || configuredPort.isBlank()) {
+            configuredPort = System.getenv("JAVABEASTS_LOBBY_PORT");
+        }
 
         try {
-            return Integer.parseInt(configuredPort);
+            return configuredPort == null || configuredPort.isBlank()
+                    ? DEFAULT_LOBBY_PORT
+                    : Integer.parseInt(configuredPort);
         } catch (NumberFormatException e) {
             return DEFAULT_LOBBY_PORT;
         }

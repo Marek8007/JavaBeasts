@@ -9,13 +9,14 @@ module.exports = {
     extend: {
       colors: {
         beasts: {
-          blue: '#1e4f8f',
-          ink: '#172033',
-          muted: '#5d6678',
-          line: '#d9e1ec',
-          soft: '#f3f6fb',
-          panel: '#ffffff',
-          warning: '#b54708',
+          blue: '#2563eb',
+          ink: '#f8fafc',
+          muted: '#bfdbfe',
+          line: '#334155',
+          soft: '#0f172a',
+          panel: '#172033',
+          gold: '#f59e0b',
+          warning: '#fb923c',
         },
       },
     },

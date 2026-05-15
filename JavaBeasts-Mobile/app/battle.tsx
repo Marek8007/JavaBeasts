@@ -1,3 +1,4 @@
+import { getProfileAction } from '@/actions/auth.actions';
 import { getBattleSnapshotAction, resetBattleAction, submitBattleActionAction } from '@/actions/battle.actions';
 import { getTeamCompositionAction } from '@/actions/team-composition.actions';
 import { getJaBeaImage } from '@/constants/jabea-images';
@@ -48,6 +49,7 @@ const TYPE_COLORS: Record<string, string> = {
 
 export default function BattleScreen() {
   const user = useAuthStore((state) => state.user);
+  const updateUser = useAuthStore((state) => state.updateUser);
   const roomStatus = useLobbyStore((state) => state.roomStatus);
   const setRoomStatus = useLobbyStore((state) => state.setRoomStatus);
   const [snapshot, setSnapshot] = useState<BattleSnapshotResponse | null>(null);
@@ -197,7 +199,9 @@ export default function BattleScreen() {
       const response = await submitBattleActionAction(roomStatus.roomCode, user.username, 'ATTACK', moveSlot);
       setActionState(response);
       setSnapshot(response.snapshot);
-      setMessage(response.message);
+      if (response.turnResolved || response.snapshot.finished) {
+        setMessage(response.message);
+      }
       void loadPlayerTeamOptions(response.snapshot);
     } catch (requestError: any) {
       setError(requestError?.message ? String(requestError.message) : 'No se pudo enviar la accion.');
@@ -218,7 +222,9 @@ export default function BattleScreen() {
       const response = await submitBattleActionAction(roomStatus.roomCode, user.username, 'SWITCH', undefined, switchSlot);
       setActionState(response);
       setSnapshot(response.snapshot);
-      setMessage(response.message);
+      if (response.turnResolved || response.snapshot.finished) {
+        setMessage(response.message);
+      }
       void loadPlayerTeamOptions(response.snapshot);
     } catch (requestError: any) {
       setError(requestError?.message ? String(requestError.message) : 'No se pudo cambiar de JaBea.');
@@ -254,7 +260,9 @@ export default function BattleScreen() {
       const response = await submitBattleActionAction(roomStatus.roomCode, user.username, 'SURRENDER');
       setActionState(response);
       setSnapshot(response.snapshot);
-      setMessage(response.message);
+      if (response.turnResolved || response.snapshot.finished) {
+        setMessage(response.message);
+      }
     } catch (requestError: any) {
       setError(requestError?.message ? String(requestError.message) : 'No se pudo rendir la partida.');
     } finally {
@@ -272,6 +280,10 @@ export default function BattleScreen() {
 
     try {
       const status = await resetBattleAction(roomStatus.roomCode);
+      if (user?.username) {
+        const refreshedUser = await getProfileAction(user.username);
+        await updateUser(refreshedUser);
+      }
       setRoomStatus(status);
       setSnapshot(null);
       setActionState(null);
@@ -288,7 +300,7 @@ export default function BattleScreen() {
     <SafeAreaView className="flex-1 bg-beasts-soft">
       <ScrollView
         className="flex-1"
-        contentContainerClassName="px-[18px] pb-8 pt-6"
+        contentContainerClassName="px-[18px] pb-8 pt-9"
         refreshControl={<RefreshControl refreshing={refreshing} onRefresh={() => void loadSnapshot(true)} />}>
         <View className="mb-5 flex-row items-center justify-between gap-3">
           <View className="flex-1">
@@ -298,7 +310,7 @@ export default function BattleScreen() {
             </Text>
           </View>
           <Pressable
-            className={`h-12 w-12 items-center justify-center rounded-lg bg-[#bb3e03] active:opacity-80 ${
+            className={`h-12 w-12 items-center justify-center rounded-lg bg-[#c2410c] active:opacity-80 ${
               actionLoading || snapshot?.finished ? 'opacity-45' : ''
             }`}
             disabled={actionLoading || snapshot?.finished}
@@ -308,19 +320,19 @@ export default function BattleScreen() {
         </View>
 
         {error ? (
-          <View className="mb-4 rounded-lg border border-[#f7d6bf] bg-[#fff4ed] px-3.5 py-3">
+          <View className="mb-4 rounded-lg border border-[#9a3412] bg-[#431407] px-3.5 py-3">
             <Text className="text-sm font-semibold leading-5 text-beasts-warning">{error}</Text>
           </View>
         ) : null}
 
         {loading ? (
-          <View className="min-h-[320px] items-center justify-center rounded-lg bg-white">
-            <ActivityIndicator color="#1e4f8f" />
+          <View className="min-h-[320px] items-center justify-center rounded-lg bg-beasts-panel">
+            <ActivityIndicator color="#1d4ed8" />
             <Text className="mt-3 text-sm font-semibold text-beasts-muted">Cargando combate...</Text>
           </View>
         ) : snapshot && currentPlayer && rivalPlayer ? (
           <View className="gap-4">
-            <View className="rounded-lg bg-white p-4 shadow-lg shadow-beasts-ink/10">
+            <View className="rounded-lg bg-beasts-panel p-4 shadow-lg shadow-beasts-ink/10">
               <Text className="text-xs font-extrabold uppercase text-beasts-muted">
                 {snapshot.finished ? 'Resultado' : 'Turno'}
               </Text>
@@ -335,11 +347,7 @@ export default function BattleScreen() {
               <Text className="mt-3 text-sm font-semibold leading-5 text-beasts-muted">
                 {message
                   ? message
-                  : currentPlayerActionSubmitted
-                    ? actionState?.turnReadyToResolve
-                      ? 'Ambos jugadores han enviado accion.'
-                      : 'Accion enviada. Esperando al rival.'
-                    : 'Elige una accion para este turno.'}
+                  : 'Elige una accion para este turno.'}
               </Text>
             </View>
 
@@ -352,7 +360,7 @@ export default function BattleScreen() {
                 username={currentPlayer.username}
               />
               <BattleCreatureCard
-                accentColor="#bb3e03"
+                accentColor="#c2410c"
                 creature={rivalPlayer.activeJaBea}
                 label="Rival"
                 teamName={rivalPlayer.teamName}
@@ -361,7 +369,7 @@ export default function BattleScreen() {
             </View>
 
             {snapshot.finished ? (
-              <View className="gap-3 rounded-lg border border-[#cde7d8] bg-[#f0fdf4] px-4 py-4">
+              <View className="gap-3 rounded-lg border border-[#166534] bg-[#052e16] px-4 py-4">
                 <Text className="text-sm font-semibold leading-5 text-[#15803d]">
                   El combate ha terminado. Puedes volver a la sala para preparar otra partida.
                 </Text>
@@ -379,7 +387,7 @@ export default function BattleScreen() {
                 </Pressable>
               </View>
             ) : activeCreatureFainted ? (
-              <View className="rounded-lg border border-[#f7d6bf] bg-[#fff4ed] px-4 py-4">
+              <View className="rounded-lg border border-[#9a3412] bg-[#431407] px-4 py-4">
                 <Text className="text-sm font-semibold leading-5 text-beasts-warning">
                   Tu JaBea esta debilitado. Elige un sustituto para continuar.
                 </Text>
@@ -415,7 +423,7 @@ export default function BattleScreen() {
                   )}
                 </Pressable>
               )) : !activeCreatureFainted ? (
-                <View className="rounded-lg border border-[#f7d6bf] bg-[#fff4ed] px-4 py-4">
+                <View className="rounded-lg border border-[#9a3412] bg-[#431407] px-4 py-4">
                   <Text className="text-sm font-semibold leading-5 text-beasts-warning">
                     No se pudieron cargar los movimientos de este JaBea.
                   </Text>
@@ -427,7 +435,7 @@ export default function BattleScreen() {
                 {switchOptions.map((option) => (
                 <Pressable
                   key={`switch-${option.slot}`}
-                  className={`min-h-[72px] flex-row items-center justify-between rounded-lg border border-[#7c3aed] bg-white px-5 active:opacity-80 ${
+                  className={`min-h-[72px] flex-row items-center justify-between rounded-lg border border-[#7c3aed] bg-beasts-panel px-5 active:opacity-80 ${
                     actionLoading || currentPlayerActionSubmitted || snapshot.finished || option.currentHealth <= 0
                       ? 'opacity-45'
                       : ''
@@ -465,7 +473,7 @@ export default function BattleScreen() {
             ) : null}
           </View>
         ) : (
-          <View className="rounded-lg bg-white px-4 py-5">
+          <View className="rounded-lg bg-beasts-panel px-4 py-5">
             <Text className="text-sm font-semibold leading-5 text-beasts-muted">
               No hay una partida activa cargada para este usuario.
             </Text>
@@ -528,13 +536,15 @@ function BattleCreatureCard({
   const typeColor = TYPE_COLORS[typeName] ?? accentColor;
 
   return (
-    <View className="rounded-lg bg-white p-4 shadow-lg shadow-beasts-ink/10">
+    <View className="rounded-lg bg-beasts-panel p-4 shadow-lg shadow-beasts-ink/10">
       <View className="flex-row items-center justify-between gap-3">
-        <Image
-          className="mr-1 h-20 w-20"
-          resizeMode="contain"
-          source={getJaBeaImage(creature.name)}
-        />
+        <View className="mr-1 h-24 w-24 items-center justify-center rounded-lg bg-[#eaf1ff]">
+          <Image
+            className="h-20 w-20"
+            resizeMode="contain"
+            source={getJaBeaImage(creature.name)}
+          />
+        </View>
         <View className="flex-1">
           <Text className="text-xs font-extrabold uppercase text-beasts-muted">{label}</Text>
           <Text className="mt-1 text-lg font-extrabold text-beasts-ink">{creature.name}</Text>
@@ -556,7 +566,7 @@ function BattleCreatureCard({
             {creature.currentHealth} / {creature.maxHealth}
           </Text>
         </View>
-        <View className="mt-2 h-3 overflow-hidden rounded-full bg-[#e8edf5]">
+        <View className="mt-2 h-3 overflow-hidden rounded-full bg-[#1e3a8a]">
           <View
             className="h-full rounded-full"
             style={{

@@ -56,33 +56,33 @@ export default function LoginScreen() {
         behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
         className="flex-1 justify-center px-6">
         <View className="mb-[34px] items-center gap-2">
-          <Ionicons name="game-controller-outline" size={46} color="#1e4f8f" />
+          <Ionicons name="game-controller-outline" size={46} color="#1d4ed8" />
           <Text className="text-[34px] font-extrabold text-beasts-ink">JavaBeasts</Text>
           <Text className="text-[15px] text-beasts-muted">Inicia sesion para preparar tu equipo.</Text>
         </View>
 
         <View className="gap-3.5">
-          <View className="min-h-[52px] flex-row items-center rounded-lg border border-beasts-line bg-white px-3.5">
-            <Ionicons name="person-outline" size={20} color="#68758a" />
+          <View className="min-h-[52px] flex-row items-center rounded-lg border border-beasts-line bg-beasts-panel px-3.5">
+            <Ionicons name="person-outline" size={20} color="#94a3b8" />
             <TextInput
               autoCapitalize="none"
               autoCorrect={false}
               className="ml-2.5 flex-1 text-base text-beasts-ink"
               onChangeText={setUsername}
               placeholder="Usuario"
-              placeholderTextColor="#8a93a3"
+              placeholderTextColor="#94a3b8"
               value={username}
             />
           </View>
 
-          <View className="min-h-[52px] flex-row items-center rounded-lg border border-beasts-line bg-white px-3.5">
-            <Ionicons name="lock-closed-outline" size={20} color="#68758a" />
+          <View className="min-h-[52px] flex-row items-center rounded-lg border border-beasts-line bg-beasts-panel px-3.5">
+            <Ionicons name="lock-closed-outline" size={20} color="#94a3b8" />
             <TextInput
               autoCapitalize="none"
               className="ml-2.5 flex-1 text-base text-beasts-ink"
               onChangeText={setPassword}
               placeholder="Contrasena"
-              placeholderTextColor="#8a93a3"
+              placeholderTextColor="#94a3b8"
               secureTextEntry={!showPassword}
               value={password}
             />
@@ -90,7 +90,7 @@ export default function LoginScreen() {
               <Ionicons
                 name={showPassword ? 'eye-off-outline' : 'eye-outline'}
                 size={20}
-                color="#68758a"
+                color="#94a3b8"
               />
             </Pressable>
           </View>

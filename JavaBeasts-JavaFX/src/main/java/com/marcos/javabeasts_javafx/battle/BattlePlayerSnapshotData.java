@@ -1,5 +1,7 @@
 package com.marcos.javabeasts_javafx.battle;
 
+import java.util.List;
+
 public class BattlePlayerSnapshotData {
 
     private Integer userId;
@@ -7,6 +9,7 @@ public class BattlePlayerSnapshotData {
     private Integer teamId;
     private String teamName;
     private BattleCreatureSnapshotData activeJaBea;
+    private List<BattleCreatureSnapshotData> teamCreatures;
 
     public Integer getUserId() {
         return userId;
@@ -26,5 +29,9 @@ public class BattlePlayerSnapshotData {
 
     public BattleCreatureSnapshotData getActiveJaBea() {
         return activeJaBea;
+    }
+
+    public List<BattleCreatureSnapshotData> getTeamCreatures() {
+        return teamCreatures;
     }
 }

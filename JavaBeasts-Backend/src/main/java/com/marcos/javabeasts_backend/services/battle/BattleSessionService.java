@@ -6,8 +6,17 @@ import com.marcos.javabeasts_backend.dto.battle.BattleCreatureSnapshotResponse;
 import com.marcos.javabeasts_backend.dto.battle.BattleMoveSnapshotResponse;
 import com.marcos.javabeasts_backend.dto.battle.BattlePlayerSnapshotResponse;
 import com.marcos.javabeasts_backend.dto.battle.BattleSnapshotResponse;
+import com.marcos.javabeasts_backend.entity.JaBeasHistory;
+import com.marcos.javabeasts_backend.entity.JaBeasTeamed;
+import com.marcos.javabeasts_backend.entity.MatchHistory;
+import com.marcos.javabeasts_backend.entity.User;
+import com.marcos.javabeasts_backend.repositories.JaBeasHistoryRepository;
+import com.marcos.javabeasts_backend.repositories.JaBeasTeamedRepository;
+import com.marcos.javabeasts_backend.repositories.MatchHistoryRepository;
+import com.marcos.javabeasts_backend.repositories.UserRepository;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.server.ResponseStatusException;
 
 import java.util.Map;
@@ -24,12 +33,27 @@ public class BattleSessionService {
     private static final int MAX_SWITCH_SLOT = 4;
 
     private final BattleSetupService battleSetupService;
+    private final UserRepository userRepository;
+    private final MatchHistoryRepository matchHistoryRepository;
+    private final JaBeasTeamedRepository jaBeasTeamedRepository;
+    private final JaBeasHistoryRepository jaBeasHistoryRepository;
     private final Map<String, BattleSession> sessionsByRoomCode = new ConcurrentHashMap<>();
 
-    public BattleSessionService(BattleSetupService battleSetupService) {
+    public BattleSessionService(
+            BattleSetupService battleSetupService,
+            UserRepository userRepository,
+            MatchHistoryRepository matchHistoryRepository,
+            JaBeasTeamedRepository jaBeasTeamedRepository,
+            JaBeasHistoryRepository jaBeasHistoryRepository
+    ) {
         this.battleSetupService = battleSetupService;
+        this.userRepository = userRepository;
+        this.matchHistoryRepository = matchHistoryRepository;
+        this.jaBeasTeamedRepository = jaBeasTeamedRepository;
+        this.jaBeasHistoryRepository = jaBeasHistoryRepository;
     }
 
+    @Transactional
     public BattleActionSubmissionResponse submitAction(BattleActionRequest request) {
         validateRequest(request);
 
@@ -199,6 +223,9 @@ public class BattleSessionService {
 
         session.updateSnapshot(nextSnapshot);
         session.completeTurn(message);
+        if (finished) {
+            persistMatchResultIfNeeded(session, nextSnapshot);
+        }
     }
 
     private void validateRequest(BattleActionRequest request) {
@@ -289,6 +316,7 @@ public class BattleSessionService {
 
         session.updateSnapshot(nextSnapshot);
         session.completeTurn(message);
+        persistMatchResultIfNeeded(session, nextSnapshot);
     }
 
     private boolean actsFirst(BattleCreatureSnapshotResponse playerOneCreature, BattleCreatureSnapshotResponse playerTwoCreature) {
@@ -335,6 +363,13 @@ public class BattleSessionService {
                 .append(defender.username())
                 .append(". ");
 
+        double typeMultiplier = resolveTypeMultiplier(selectedMove.typeName(), defenderCreature.typeName());
+        if (typeMultiplier > 1d) {
+            resolution.append("Es muy eficaz. ");
+        } else if (typeMultiplier < 1d) {
+            resolution.append("No es muy eficaz. ");
+        }
+
         if (newHealth == 0) {
             resolution.append(defenderCreature.name()).append(" queda debilitado. ");
         }
@@ -343,6 +378,8 @@ public class BattleSessionService {
                 defenderCreature.slot(),
                 defenderCreature.jaBeasId(),
                 defenderCreature.name(),
+                defenderCreature.typeId(),
+                defenderCreature.typeName(),
                 newHealth,
                 defenderCreature.maxHealth(),
                 defenderCreature.damage(),
@@ -427,6 +464,8 @@ public class BattleSessionService {
                 creature.slot(),
                 creature.jaBeasId(),
                 creature.name(),
+                creature.typeId(),
+                creature.typeName(),
                 currentHealth,
                 creature.maxHealth(),
                 creature.damage(),
@@ -471,7 +510,9 @@ public class BattleSessionService {
     private int calculateDamage(BattleMoveSnapshotResponse move, BattleCreatureSnapshotResponse defender) {
         int moveDamage = move.damage() != null ? move.damage() : 0;
         int defenderDefence = defender.defence() != null ? defender.defence() : 0;
-        return Math.max(1, moveDamage - (defenderDefence / 2));
+        int baseDamage = Math.max(1, moveDamage - (defenderDefence / 2));
+        double multiplier = resolveTypeMultiplier(move.typeName(), defender.typeName());
+        return Math.max(1, (int) Math.round(baseDamage * multiplier));
     }
 
     private boolean moveHits(BattleMoveSnapshotResponse move) {
@@ -485,6 +526,104 @@ public class BattleSessionService {
         }
 
         return ThreadLocalRandom.current().nextInt(100) < accuracy;
+    }
+
+    private double resolveTypeMultiplier(String attackTypeName, String defenderTypeName) {
+        String attackType = normalizeTypeName(attackTypeName);
+        String defenderType = normalizeTypeName(defenderTypeName);
+
+        if (attackType == null || defenderType == null) {
+            return 1d;
+        }
+
+        return switch (attackType) {
+            case "fuego" -> switch (defenderType) {
+                case "planta" -> 1.5d;
+                case "agua" -> 0.5d;
+                default -> 1d;
+            };
+            case "planta" -> switch (defenderType) {
+                case "electrico", "rayo" -> 1.5d;
+                case "fuego" -> 0.5d;
+                default -> 1d;
+            };
+            case "electrico", "rayo" -> switch (defenderType) {
+                case "agua" -> 1.5d;
+                case "planta" -> 0.5d;
+                default -> 1d;
+            };
+            case "agua" -> switch (defenderType) {
+                case "fuego" -> 1.5d;
+                case "electrico", "rayo" -> 0.5d;
+                default -> 1d;
+            };
+            default -> 1d;
+        };
+    }
+
+    private String normalizeTypeName(String typeName) {
+        if (typeName == null || typeName.isBlank()) {
+            return null;
+        }
+
+        return typeName.trim().toLowerCase();
+    }
+
+    private void persistMatchResultIfNeeded(BattleSession session, BattleSnapshotResponse snapshot) {
+        if (session.isResultPersisted() || snapshot == null || !snapshot.finished()) {
+            return;
+        }
+
+        if (snapshot.winnerUsername() == null || snapshot.winnerUsername().isBlank()) {
+            session.markResultPersisted();
+            return;
+        }
+
+        BattlePlayerSnapshotResponse winnerSnapshot = snapshot.playerOne().username().equals(snapshot.winnerUsername())
+                ? snapshot.playerOne()
+                : snapshot.playerTwo();
+        BattlePlayerSnapshotResponse loserSnapshot = snapshot.playerOne().username().equals(snapshot.winnerUsername())
+                ? snapshot.playerTwo()
+                : snapshot.playerOne();
+
+        User winner = userRepository.findById(winnerSnapshot.userId())
+                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Ganador no encontrado"));
+        User loser = userRepository.findById(loserSnapshot.userId())
+                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Perdedor no encontrado"));
+
+        winner.setMatchesWon(winner.getMatchesWon() + 1);
+        loser.setMatchesLost(loser.getMatchesLost() + 1);
+        userRepository.save(winner);
+        userRepository.save(loser);
+
+        MatchHistory matchHistory = new MatchHistory();
+        matchHistory.setWinner(winner);
+        matchHistory.setLoser(loser);
+        matchHistory.setTurns(Math.max(1, session.getTurnNumber()));
+        MatchHistory savedMatch = matchHistoryRepository.save(matchHistory);
+
+        saveTeamHistory(savedMatch, winnerSnapshot, winner);
+        saveTeamHistory(savedMatch, loserSnapshot, loser);
+
+        session.markResultPersisted();
+    }
+
+    private void saveTeamHistory(MatchHistory matchHistory, BattlePlayerSnapshotResponse playerSnapshot, User owner) {
+        List<JaBeasTeamed> teamMembers = jaBeasTeamedRepository.findByTeamTeamIdOrderByIdSlotAsc(playerSnapshot.teamId());
+        for (JaBeasTeamed teamMember : teamMembers) {
+            if (teamMember.getJaBeas() == null || teamMember.getMove1() == null || teamMember.getMove2() == null) {
+                continue;
+            }
+
+            JaBeasHistory jaBeasHistory = new JaBeasHistory();
+            jaBeasHistory.setMatch(matchHistory);
+            jaBeasHistory.setOwner(owner);
+            jaBeasHistory.setJaBeas(teamMember.getJaBeas());
+            jaBeasHistory.setMove1(teamMember.getMove1());
+            jaBeasHistory.setMove2(teamMember.getMove2());
+            jaBeasHistory.setSlot(teamMember.getSlot() != null ? teamMember.getSlot() : 0);
+            jaBeasHistoryRepository.save(jaBeasHistory);
+        }
     }
 
 }

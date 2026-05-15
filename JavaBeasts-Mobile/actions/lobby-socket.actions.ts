@@ -50,6 +50,8 @@ export const sendLobbyRequest = <TResponse>(
   }
 
   return new Promise((resolve, reject) => {
+    const host = getLobbySocketHost();
+    const port = getLobbySocketPort();
     let responseBuffer = '';
     let settled = false;
     let timeout: ReturnType<typeof setTimeout>;
@@ -81,13 +83,13 @@ export const sendLobbyRequest = <TResponse>(
     };
 
     timeout = setTimeout(() => {
-      settleWithError(new LobbySocketError('Tiempo de espera agotado al conectar con la sala'));
+      settleWithError(new LobbySocketError(`Tiempo de espera agotado al conectar con la sala (${host}:${port})`));
     }, REQUEST_TIMEOUT_MS);
 
     socket = TcpSocket.createConnection(
       {
-        host: getLobbySocketHost(),
-        port: getLobbySocketPort(),
+        host,
+        port,
       },
       () => {
         socket.write(JSON.stringify({ code, data }) + '\n');
@@ -111,7 +113,7 @@ export const sendLobbyRequest = <TResponse>(
     };
 
     socket.setTimeout(REQUEST_TIMEOUT_MS, () => {
-      settleWithError(new LobbySocketError('Tiempo de espera agotado al conectar con la sala'));
+      settleWithError(new LobbySocketError(`Tiempo de espera agotado al conectar con la sala (${host}:${port})`));
     });
 
     socket.on('data', (chunk) => {

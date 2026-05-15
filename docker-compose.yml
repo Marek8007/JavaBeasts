@@ -1,0 +1,40 @@
+services:
+  mysql:
+    image: mysql:8.0
+    container_name: javabeasts-mysql
+    profiles:
+      - local
+    environment:
+      MYSQL_DATABASE: ${MYSQL_DATABASE:-JavaBeasts}
+      MYSQL_ROOT_PASSWORD: ${MYSQL_ROOT_PASSWORD:-rootpass}
+      MYSQL_USER: ${MYSQL_USER:-dbuser}
+      MYSQL_PASSWORD: ${MYSQL_PASSWORD:-dbpass}
+    ports:
+      - "${MYSQL_PUBLIC_PORT:-33006}:3306"
+    volumes:
+      - mysql_data:/var/lib/mysql
+      - ./JavaBeasts-BBDD/init:/docker-entrypoint-initdb.d:ro,Z
+    healthcheck:
+      test: ["CMD-SHELL", "mysqladmin ping -h localhost -u$${MYSQL_USER} -p$${MYSQL_PASSWORD}"]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+
+  backend:
+    build:
+      context: ./JavaBeasts-Backend
+    container_name: javabeasts-backend
+    environment:
+      DB_HOST: ${DB_HOST:-mysql}
+      DB_PORT: ${DB_PORT:-3306}
+      DB_NAME: ${DB_NAME:-JavaBeasts}
+      DB_USERNAME: ${DB_USERNAME:-dbuser}
+      DB_PASSWORD: ${DB_PASSWORD:-dbpass}
+      DB_URL_OPTIONS: ${DB_URL_OPTIONS:-?sslMode=DISABLED}
+      APP_DB_TEST_ON_STARTUP: ${APP_DB_TEST_ON_STARTUP:-false}
+    ports:
+      - "${BACKEND_HTTP_PORT:-9234}:9234"
+      - "${BACKEND_SOCKET_PORT:-7878}:7878"
+
+volumes:
+  mysql_data:

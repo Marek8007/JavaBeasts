@@ -68,6 +68,14 @@ public class AuthService {
         return toResponse(userRepository.save(user), "Sesion cerrada correctamente");
     }
 
+    @Transactional(readOnly = true)
+    public AuthResponse profile(String username) {
+        User user = userRepository.findByUsername(username.trim())
+                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Usuario no encontrado"));
+
+        return toResponse(user, "Perfil cargado correctamente");
+    }
+
     private AuthResponse toResponse(User user, String message) {
         return new AuthResponse(
                 user.getUserId(),
