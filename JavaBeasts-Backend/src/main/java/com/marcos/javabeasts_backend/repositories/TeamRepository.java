@@ -15,4 +15,6 @@ public interface TeamRepository extends JpaRepository<Team, Integer> {
 
     Optional<Team> findByUserUserIdAndActiveTrue(Integer userId);
 
+
+    String[][][][] cubo = new String[4][4][4][4];
 }
